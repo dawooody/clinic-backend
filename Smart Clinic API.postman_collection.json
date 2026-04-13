@@ -1,0 +1,1645 @@
+{
+  "info": {
+    "_postman_id": "df28f845-bc98-459d-aac0-fe405f116acb",
+    "name": "Smart Clinic API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "40121801"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Patient",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"full_name\": \"hossam fahmy\",\r\n \"email\": \"hossamfahmy@gamil.com\"\r\n , \"password\": \"password123\"\r\n , \"phone\": \"01012345678\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Patient",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \r\n\"hossamfahmy@gamil.com\",\r\n \"password\": \"password123\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Doctor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"doctor@test.com\", \"password\": \"password123\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"admin1@clinic.com\",\r\n  \"password\": \"admin123\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"refreshToken\": \"YOUR_REFRESH_TOKEN_HERE\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/refresh-token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "refresh-token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Patients",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patients/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patients",
+                "profile"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"full_name\": \"Ahmed Ali Updated\", \r\n\"phone\": \"01098765432\",\r\n \"date_of_birth\": \"2000-11-19\", \r\n \"gender\": \"male\", \r\n \"blood_type\": \"O+\", \r\n \"allergies\": \"Penicillin\", \r\n \"chronic_conditions\": \"Hypertension\",\r\n  \"address\": \"Cairo, Egypt\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/patients/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patients",
+                "profile"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Patient By ID (Doctor)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patients/PATIENT_ID_HERE",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patients",
+                "PATIENT_ID_HERE"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Doctors",
+      "item": [
+        {
+          "name": "List All Doctors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/doctors?page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "doctors"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Doctors by Specialty",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/doctors?specialty_id=SPECIALTY_ID",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "doctors"
+              ],
+              "query": [
+                {
+                  "key": "specialty_id",
+                  "value": "SPECIALTY_ID"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Doctors by Name",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/doctors?search=Ahmed",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "doctors"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "Ahmed"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Doctor By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/doctors/DOCTOR_ID_HERE",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "doctors",
+                "DOCTOR_ID_HERE"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Available Slots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/doctors/DOCTOR_ID_HERE/slots?date=2025-06-15",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "doctors",
+                "DOCTOR_ID_HERE",
+                "slots"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2025-06-15"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Profile (Doctor)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/doctors/me/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "doctors",
+                "me",
+                "profile"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Doctor Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"bio\": \"Experienced cardiologist with 10 years.\",\r\n\"id\": \"4f79b12f-9a99-41af-8ed1-806c5bf4327\",\r\n \"years_experience\": 10,\r\n  \"consultation_fee\": 200}"
+            },
+            "url": {
+              "raw": "{{base_url}}/doctors/me/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "doctors",
+                "me",
+                "profile"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Doctor Schedule",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"schedules\": [{\"day_of_week\": 0, \"start_time\": \"09:00\", \"end_time\": \"17:00\", \"slot_duration_minutes\": 30}, {\"day_of_week\": 1, \"start_time\": \"09:00\", \"end_time\": \"17:00\", \"slot_duration_minutes\": 30}, {\"day_of_week\": 3, \"start_time\": \"10:00\", \"end_time\": \"14:00\", \"slot_duration_minutes\": 30}]}"
+            },
+            "url": {
+              "raw": "{{base_url}}/doctors/me/schedule",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "doctors",
+                "me",
+                "schedule"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Appointments",
+      "item": [
+        {
+          "name": "Book Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "\r\n{\r\n  \"doctorId\": \"80a72d4a-7723-4cc8-bcdc-de72a78f7bf5\",\r\n  \"appointmentDate\": \"2026-05-01\",\r\n  \"timeSlot\": \"10:00\",\r\n  \"notes\": \"First visit\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appointments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Appointments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments?page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appointments"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Appointments (Filtered by status)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments?status=pending",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appointments"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Today's Appointments (Doctor)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/today",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appointments",
+                "today"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Appointment By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/APPOINTMENT_ID",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appointments",
+                "APPOINTMENT_ID"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Confirm Appointment (Doctor)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/appointments/3348d77c-e131-4f12-a8e1-f7d4f640de60/confirm",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "appointments",
+                "3348d77c-e131-4f12-a8e1-f7d4f640de60",
+                "confirm"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Appointment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"reason\": \"Personal emergency\"}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/appointments/00e6dec7-29d6-41ac-ac7b-8227243b872d/cancel",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "appointments",
+                "00e6dec7-29d6-41ac-ac7b-8227243b872d",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Appointment (Doctor)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"doctor_notes\": \"Patient examined. Prescribed medications. Follow up in 2 weeks.\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments/APPOINTMENT_ID/complete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appointments",
+                "APPOINTMENT_ID",
+                "complete"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "deleted cancelled or completed",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/appointments/9d9e2229-0bcd-48ce-b683-5a4ae85ad747",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "appointments",
+                "9d9e2229-0bcd-48ce-b683-5a4ae85ad747"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Medical Records",
+      "item": [
+        {
+          "name": "Upload Medical Record (PDF)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "value": ""
+                },
+                {
+                  "key": "title",
+                  "value": "Blood Test Results June 2025",
+                  "type": "text"
+                },
+                {
+                  "key": "record_type",
+                  "value": "lab_result",
+                  "type": "text"
+                },
+                {
+                  "key": "record_date",
+                  "value": "2025-06-01",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/medical-records",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "medical-records"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Medical Records",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/medical-records",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "medical-records"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Patient Records (Doctor)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/medical-records/patient/PATIENT_ID",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "medical-records",
+                "patient",
+                "PATIENT_ID"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Medical Record",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/medical-records/RECORD_ID",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "medical-records",
+                "RECORD_ID"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Prescriptions",
+      "item": [
+        {
+          "name": "Create Prescription (Doctor)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"appointment_id\": \"APPOINTMENT_ID\", \"patient_id\": \"PATIENT_ID\", \"diagnosis\": \"Hypertension Stage 1\", \"medicines\": [{\"name\": \"Amlodipine\", \"dosage\": \"5mg\", \"frequency\": \"Once daily\", \"duration\": \"30 days\"}, {\"name\": \"Aspirin\", \"dosage\": \"100mg\", \"frequency\": \"Once daily\", \"duration\": \"30 days\"}], \"instructions\": \"Take medications after meals. Reduce salt intake. Monitor blood pressure daily.\", \"follow_up_date\": \"2025-07-15\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/prescriptions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prescriptions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Prescriptions (Patient)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/prescriptions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prescriptions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Prescription By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/prescriptions/df651db3-eae6-4255-9629-be1a083ef81d",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prescriptions",
+                "df651db3-eae6-4255-9629-be1a083ef81d"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Patient Prescriptions (Doctor)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/prescriptions/patient/42ec2143-8a29-468a-a31b-670d02fdabe3",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prescriptions",
+                "patient",
+                "42ec2143-8a29-468a-a31b-670d02fdabe3"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Symptom Tracker",
+      "item": [
+        {
+          "name": "Add Daily Log",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"log_date\": \"2025-06-10\", \"pain_level\": 3, \"symptoms\": \"Mild headache and fatigue\", \"medications_taken\": true, \"notes\": \"Feeling slightly better than yesterday\", \"temperature\": 37.2, \"mood\": \"okay\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/symptom-tracker",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "symptom-tracker"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/symptom-tracker?from=2025-06-01&to=2025-06-30",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "symptom-tracker"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2025-06-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2025-06-30"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Log",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pain_level\": 2, \"medications_taken\": true, \"mood\": \"good\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/symptom-tracker/LOG_ID",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "symptom-tracker",
+                "LOG_ID"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Patient Logs (Doctor)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/symptom-tracker/patient/PATIENT_ID",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "symptom-tracker",
+                "patient",
+                "PATIENT_ID"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Family Links",
+      "item": [
+        {
+          "name": "Request Family Link",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"receiver_email\": \"ahmedalaa1@gamil.com\", \"relationship\": \"sibling\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/family-links",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "family-links"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Family Members",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/family-links",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "family-links"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pending Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/family-links/pending",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "family-links",
+                "pending"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Accept Family Link",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/family-links/1e7266c7-df91-408d-8fb0-3c799bdb3770/accept",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "family-links",
+                "1e7266c7-df91-408d-8fb0-3c799bdb3770",
+                "accept"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Family Link",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/family-links/LINK_ID/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "family-links",
+                "LINK_ID",
+                "reject"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI Features",
+      "item": [
+        {
+          "name": "AI Chatbot (Patient)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"messages\": [{\"role\": \"user\", \"content\": \"I have been having chest pain and difficulty breathing for 2 days\"}]}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ai/chatbot",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "chatbot"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AI Chatbot - Follow Up Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"messages\": [{\"role\": \"user\", \"content\": \"I have been having chest pain and difficulty breathing for 2 days\"}, {\"role\": \"assistant\", \"content\": \"I'm sorry to hear that. Can you describe the pain? Is it sharp or dull?\"}, {\"role\": \"user\", \"content\": \"It is a sharp pain on the left side, gets worse when I breathe deeply\"}]}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ai/chatbot",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "chatbot"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Pre-Visit Summary (Doctor)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/pre-visit/APPOINTMENT_ID",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "pre-visit",
+                "APPOINTMENT_ID"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Genetic Risks Analysis (Doctor)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctor_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/genetic-risks/PATIENT_ID",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "genetic-risks",
+                "PATIENT_ID"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Re-Summarize Record (Patient)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patient_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ai/summarize/RECORD_ID",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ai",
+                "summarize",
+                "RECORD_ID"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Panel",
+      "item": [
+        {
+          "name": "Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "dashboard"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Doctor Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"full_name\": \"Dr. Ismail Mohammed\",\r\n  \"email\": \"doctor19@test.com\",\r\n  \"password\": \"password123\",\r\n  \"phone\": \"01099887866\",\r\n \r\n  \"bio\": \"Dermatologist with 5 years experience\",\r\n  \"license_number\": \"LIC-2026-004\",\r\n  \"years_experience\": 5,\r\n  \"consultation_fee\": 150\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/doctors",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "doctors"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Appointments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/appointments?page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "appointments"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Appointment (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"cancelled\", \"cancellation_reason\": \"Doctor unavailable\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/appointments/APPOINTMENT_ID",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "appointments",
+                "APPOINTMENT_ID"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Doctors",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/doctors",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "doctors"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Doctor Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/doctors/DOCTOR_ID/toggle",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "doctors",
+                "DOCTOR_ID",
+                "toggle"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Doctor Schedule",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/doctors/DOCTOR_ID/schedule",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "doctors",
+                "DOCTOR_ID",
+                "schedule"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Doctor Schedule (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"schedules\": [\r\n    { \"day_of_week\": 0, \"start_time\": \"09:00\", \"end_time\": \"17:00\", \"slot_duration_minutes\": 30 },\r\n    { \"day_of_week\": 1, \"start_time\": \"09:00\", \"end_time\": \"17:00\", \"slot_duration_minutes\": 30 }\r\n  ]\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/doctors/DOCTOR_ID/schedule",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "doctors",
+                "DOCTOR_ID",
+                "schedule"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000/api"
+    },
+    {
+      "key": "patient_token",
+      "value": ""
+    },
+    {
+      "key": "doctor_token",
+      "value": ""
+    },
+    {
+      "key": "admin_token",
+      "value": ""
+    },
+    {
+      "key": "patient_token2",
+      "value": ""
+    }
+  ]
+}
