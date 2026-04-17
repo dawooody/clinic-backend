@@ -19,9 +19,10 @@ const start = async () => {
       console.log(`Mobile API ready at http://localhost:${PORT}/api`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error.message);
-    process.exit(1);
-  }
+  console.error('Failed to start server:');
+  console.error(error); 
+  process.exit(1);
+}
 };
 
 start();
