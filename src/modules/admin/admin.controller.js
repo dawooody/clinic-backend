@@ -36,6 +36,30 @@ const createDoctor = async (req, res, next) => {
     next(err);
   }
 };
+const getAllPatients = async (req, res, next) => {
+  try {
+    const { page, limit } = req.query;
+    const { rows, count } = await service.getAllPatients({ page, limit });
+    return paginated(res, rows, count, page || 1, limit || 20);
+  } catch (err) { next(err); }
+};
+
+const removeDoctor = async (req, res, next) => {
+  try {
+    const data = await service.removeDoctor(req.params.id);
+    return success(res, data, 'Doctor removed');
+  } catch (err) {
+    if (err.status) return error(res, err.message, err.status);
+    next(err);
+  }
+};
+
+const removeAllDoctors = async (req, res, next) => {
+  try {
+    const data = await service.removeAllDoctors();
+    return success(res, data, 'All doctors removed');
+  } catch (err) { next(err); }
+};
 
 const toggleDoctorStatus = async (req, res, next) => {
   try {
@@ -87,4 +111,7 @@ module.exports = {
   getDoctorSchedule,
   setDoctorSchedule,
   getDashboardStats,
+  getAllPatients,
+  removeAllDoctors,
+  removeDoctor,
 };
