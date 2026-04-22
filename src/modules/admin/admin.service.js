@@ -54,6 +54,45 @@ const getAllDoctors = async ({ page = 1, limit = 20 }) => {
   });
   return { rows, count };
 };
+// ─── PATIENTS MANAGEMENT ─────────────────────────────────────────────────────
+const getAllPatients = async ({ page = 1, limit = 20 }) => {
+  const offset = (page - 1) * limit;
+  const { rows, count } = await Patient.findAndCountAll({
+    include: [
+      { model: User, as: 'user', attributes: { exclude: ['password', 'refresh_token'] } },
+    ],
+    limit: parseInt(limit),
+    offset,
+    distinct: true,
+  });
+  return { rows, count };
+};
+// remove a doctor by id ---------
+const removeDoctor = async (doctorId) => {
+  const doctor = await Doctor.findByPk(doctorId, {
+    include: [{ model: User, as: 'user' }],
+  });
+  if (!doctor) throw { status: 404, message: 'Doctor not found.' };
+
+  await doctor.destroy();
+  await doctor.user.destroy();
+
+  return { message: 'Doctor removed successfully.' };
+};
+// remove all doctors
+const removeAllDoctors = async () => {
+  const doctors = await Doctor.findAll({
+    include: [{ model: User, as: 'user' }],
+  });
+
+  for (const doctor of doctors) {
+    await doctor.destroy();
+    await doctor.user.destroy();
+  }
+
+  return { message: `${doctors.length} doctor(s) removed successfully.` };
+};
+
 
 // Admin creates a doctor account (doctors cannot self-register)
 const createDoctor = async ({ full_name, email, password, phone, specialty_id, bio, license_number, years_experience, consultation_fee }) => {
@@ -122,4 +161,7 @@ module.exports = {
   getDoctorSchedule,
   setDoctorSchedule,
   getDashboardStats,
+  getAllPatients,
+  removeDoctor,
+  removeAllDoctors,
 };

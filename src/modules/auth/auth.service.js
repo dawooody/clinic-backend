@@ -6,34 +6,28 @@ const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = requir
  * Doctors are created by admin only
  */
 const register = async ({ full_name, email, password, phone, role = 'patient' }) => {
-  // Check email exists
   const existing = await User.findOne({ where: { email } });
   if (existing) throw { status: 409, message: 'Email already registered.' };
-   // Check username exists
+
   const existingUsername = await User.findOne({ where: { full_name } });
   if (existingUsername) throw { status: 409, message: 'Username already taken.' };
 
-     // ✅ تحقق من رقم التليفون (مصر: يبدأ بـ 010/011/012/015 ويكون 11 رقم)
-    const phoneRegex = /^(010|011|012|015)\d{8}$/;
-    if (!phoneRegex.test(phone)) {
-      return error(res, 'Phone number is not valid.', 400);
-    }
-   // check password length
-     if (password.length < 8) {
-      return error(res, 'Password must be at least 8 characters.', 400);
-      }
-  // Only allow patients to self-register
+  const phoneRegex = /^(010|011|012|015)\d{8}$/;
+  if (!phoneRegex.test(phone)) {
+    throw { status: 400, message: 'Phone number is not valid. Must start with 010/011/012/015 and be 11 digits.' };
+  }
+
+  if (password.length < 8) {
+    throw { status: 400, message: 'Password must be at least 8 characters.' };
+  }
+
   if (role !== 'patient') throw { status: 403, message: 'Cannot self-register with this role.' };
 
   const user = await User.create({ full_name, email, password, phone, role });
-
-  // Create the matching patient profile automatically
   await Patient.create({ user_id: user.id });
 
   const accessToken  = generateAccessToken({ id: user.id, role: user.role });
   const refreshToken = generateRefreshToken({ id: user.id });
-
-  // Save refresh token in DB
   await user.update({ refresh_token: refreshToken });
 
   return {

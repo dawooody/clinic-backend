@@ -16,6 +16,12 @@ router.put('/appointments/:id',         ctrl.updateAppointment);
 router.get('/doctors',                  ctrl.getAllDoctors);
 router.post('/doctors',                 ctrl.createDoctor);
 router.patch('/doctors/:id/toggle',     ctrl.toggleDoctorStatus);
+// Patients
+router.get('/patients', ctrl.getAllPatients);
+
+// Remove doctor(s)
+router.delete('/doctors/:id', ctrl.removeDoctor);
+router.delete('/doctors',     ctrl.removeAllDoctors);
 
 // Doctor schedules
 router.get('/doctors/:id/schedule',     ctrl.getDoctorSchedule);
