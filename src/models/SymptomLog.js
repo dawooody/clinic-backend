@@ -18,7 +18,7 @@ const SymptomLog = sequelize.define('SymptomLog', {
   },
   // Pain scale 1-5
   pain_level: {
-    type: DataTypes.TINYINT,
+    type: DataTypes.SMALLINT,
     allowNull: false,
     validate: { min: 1, max: 5 },
   },
