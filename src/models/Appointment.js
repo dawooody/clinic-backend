@@ -35,7 +35,7 @@ const Appointment = sequelize.define('Appointment', {
   doctor_notes: DataTypes.TEXT,
   cancellation_reason: DataTypes.TEXT,
   rating: {
-    type: DataTypes.TINYINT,
+    type: DataTypes.SMALLINT,
     validate: { min: 1, max: 5 },
   },
 }, 

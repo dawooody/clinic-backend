@@ -1,17 +1,156 @@
 const { askGemini } = require('../../config/gemini');
+const { createClient } = require('@supabase/supabase-js');
 const {
   Patient, Doctor, Appointment, MedicalRecord,
-  Prescription, SymptomLog, FamilyLink, User, Specialty,
+  Prescription, SymptomLog, FamilyLink, User,
 } = require('../../models');
 const { Op } = require('sequelize');
 
-// ─── 1. AI CHATBOT ───────────────────────────────────────────────────────────
+const EMBEDDING_MODEL = 'Xenova/bge-base-en-v1.5';
+const EMBEDDING_SIZE = 768;
+const SEARCH_RESULT_LIMIT = 5;
+
+let extractor;
+let extractorPromise;
+let supabase;
+
+const createHttpError = (status, message) => {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+};
+
+const getSupabaseClient = () => {
+  if (supabase) {
+    return supabase;
+  }
+
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+    throw createHttpError(500, 'Supabase configuration is missing.');
+  }
+
+  supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+  return supabase;
+};
+
+const getExtractor = async () => {
+  if (extractor) {
+    return extractor;
+  }
+
+  if (!extractorPromise) {
+    extractorPromise = import('@xenova/transformers')
+      .then(({ pipeline }) => pipeline('feature-extraction', EMBEDDING_MODEL))
+      .then((loadedExtractor) => {
+        extractor = loadedExtractor;
+        return extractor;
+      })
+      .catch((error) => {
+        extractorPromise = null;
+        throw error;
+      });
+  }
+
+  return extractorPromise;
+};
+
+const getEmbedding = async (text) => {
+  const trimmedText = text?.trim();
+
+  if (!trimmedText) {
+    throw createHttpError(400, 'Query text is required.');
+  }
+
+  try {
+    const embeddingExtractor = await getExtractor();
+    const output = await embeddingExtractor(trimmedText, {
+      pooling: 'mean',
+      normalize: true,
+    });
+
+    const embedding = Array.from(output.data);
+
+    if (embedding.length !== EMBEDDING_SIZE) {
+      throw new Error(`Expected embedding size ${EMBEDDING_SIZE}, received ${embedding.length}.`);
+    }
+
+    return embedding;
+  } catch (error) {
+    if (error.status) {
+      throw error;
+    }
+
+    throw createHttpError(500, `Failed to generate embedding: ${error.message}`);
+  }
+};
+
+const searchDocuments = async (query, limit = SEARCH_RESULT_LIMIT) => {
+  const trimmedQuery = query?.trim();
+
+  if (!trimmedQuery) {
+    throw createHttpError(400, 'Query is required.');
+  }
+
+  const embedding = await getEmbedding(trimmedQuery);
+
+  try {
+    const client = getSupabaseClient();
+    const { data, error } = await client.rpc('match_documents', {
+      query_embedding: embedding,
+      match_count: limit,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    return data
+      .map((row) => row?.content)
+      .filter(Boolean)
+      .slice(0, limit);
+  } catch (error) {
+    throw createHttpError(500, `Failed to search documents: ${error.message}`);
+  }
+};
+
+const buildChatContext = async (message) => {
+  const trimmedMessage = message?.trim();
+
+  if (!trimmedMessage) {
+    throw createHttpError(400, 'Message is required.');
+  }
+
+  const results = await searchDocuments(trimmedMessage, SEARCH_RESULT_LIMIT);
+  const numberedResults = results.length > 0
+    ? results.map((result, index) => `${index + 1}. ${result}`).join('\n')
+    : 'No relevant medical data found.';
+
+  const context = [
+    'Based on the following medical data:',
+    '',
+    numberedResults,
+    '',
+    `User question: ${trimmedMessage}`,
+  ].join('\n');
+
+  return {
+    context,
+    message: 'This is where LLM will generate the final answer later',
+    results,
+  };
+};
+
 const chatWithBot = async (messages) => {
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
-    throw { status: 400, message: 'messages array is required.' };
+    throw createHttpError(400, 'messages array is required.');
   }
+
   const conversation = messages
-    .map((m) => `${m.role === 'user' ? 'Patient' : 'Assistant'}: ${m.content}`)
+    .map((message) => `${message.role === 'user' ? 'Patient' : 'Assistant'}: ${message.content}`)
     .join('\n');
 
   const promptLines = [
@@ -36,25 +175,35 @@ const chatWithBot = async (messages) => {
 
   let suggested_specialty = null;
   const jsonMatch = reply.match(/\{"suggested_specialty"\s*:\s*"([^"]+)"\}/);
-  if (jsonMatch) suggested_specialty = jsonMatch[1];
+  if (jsonMatch) {
+    suggested_specialty = jsonMatch[1];
+  }
 
   const cleanReply = reply.replace(/\{[^}]*"suggested_specialty"[^}]*\}/g, '').trim();
   return { reply: cleanReply, suggested_specialty };
 };
 
-// ─── 2. PRE-VISIT PATIENT BRIEF FOR DOCTOR ───────────────────────────────────
 const getPreVisitSummary = async (appointmentId, doctorUserId) => {
   const doctor = await Doctor.findOne({ where: { user_id: doctorUserId } });
-  if (!doctor) throw { status: 404, message: 'Doctor profile not found.' };
+  if (!doctor) {
+    throw createHttpError(404, 'Doctor profile not found.');
+  }
 
   const appointment = await Appointment.findByPk(appointmentId, {
     include: [{
-      model: Patient, as: 'patient',
+      model: Patient,
+      as: 'patient',
       include: [{ model: User, as: 'user', attributes: ['full_name', 'phone'] }],
     }],
   });
-  if (!appointment) throw { status: 404, message: 'Appointment not found.' };
-  if (appointment.doctor_id !== doctor.id) throw { status: 403, message: 'Access denied.' };
+
+  if (!appointment) {
+    throw createHttpError(404, 'Appointment not found.');
+  }
+
+  if (appointment.doctor_id !== doctor.id) {
+    throw createHttpError(403, 'Access denied.');
+  }
 
   const patient = appointment.patient;
 
@@ -79,27 +228,27 @@ const getPreVisitSummary = async (appointmentId, doctorUserId) => {
   });
 
   const dataLines = [
-    'Patient: ' + patient.user.full_name,
-    'Gender: ' + (patient.gender || 'N/A') + ' | Blood type: ' + (patient.blood_type || 'N/A'),
-    'Allergies: ' + (patient.allergies || 'None'),
-    'Chronic conditions: ' + (patient.chronic_conditions || 'None'),
+    `Patient: ${patient.user.full_name}`,
+    `Gender: ${patient.gender || 'N/A'} | Blood type: ${patient.blood_type || 'N/A'}`,
+    `Allergies: ${patient.allergies || 'None'}`,
+    `Chronic conditions: ${patient.chronic_conditions || 'None'}`,
     '',
-    'Reason for visit (chatbot summary): ' + (appointment.ai_chatbot_summary || 'Not provided'),
-    'Patient notes: ' + (appointment.patient_notes || 'None'),
+    `Reason for visit (chatbot summary): ${appointment.ai_chatbot_summary || 'Not provided'}`,
+    `Patient notes: ${appointment.patient_notes || 'None'}`,
     '',
     'Recent medical records:',
-    records.length
-      ? records.map((r) => '  - ' + r.title + ' (' + (r.record_date || 'N/A') + '): ' + (r.ai_summary || 'No summary')).join('\n')
+    records.length > 0
+      ? records.map((record) => `  - ${record.title} (${record.record_date || 'N/A'}): ${record.ai_summary || 'No summary'}`).join('\n')
       : '  None uploaded',
     '',
     'Last 7 days symptom logs:',
-    recentLogs.length
-      ? recentLogs.map((l) => '  - ' + l.log_date + ': pain=' + l.pain_level + '/5, meds_taken=' + l.medications_taken).join('\n')
+    recentLogs.length > 0
+      ? recentLogs.map((log) => `  - ${log.log_date}: pain=${log.pain_level}/5, meds_taken=${log.medications_taken}`).join('\n')
       : '  No logs',
     '',
     'Past diagnoses:',
-    pastPrescriptions.length
-      ? pastPrescriptions.map((p) => '  - ' + p.diagnosis).join('\n')
+    pastPrescriptions.length > 0
+      ? pastPrescriptions.map((prescription) => `  - ${prescription.diagnosis}`).join('\n')
       : '  None on record',
   ];
 
@@ -116,13 +265,16 @@ const getPreVisitSummary = async (appointmentId, doctorUserId) => {
   return { appointment, patient, brief };
 };
 
-// ─── 3. GENETIC / HEREDITARY RISK ANALYSIS ───────────────────────────────────
 const getGeneticRisks = async (patientId, doctorUserId) => {
   const doctor = await Doctor.findOne({ where: { user_id: doctorUserId } });
-  if (!doctor) throw { status: 404, message: 'Doctor not found.' };
+  if (!doctor) {
+    throw createHttpError(404, 'Doctor not found.');
+  }
 
   const patient = await Patient.findByPk(patientId);
-  if (!patient) throw { status: 404, message: 'Patient not found.' };
+  if (!patient) {
+    throw createHttpError(404, 'Patient not found.');
+  }
 
   const links = await FamilyLink.findAll({
     where: {
@@ -131,7 +283,7 @@ const getGeneticRisks = async (patientId, doctorUserId) => {
     },
     include: [
       { model: Patient, as: 'requester', include: [{ model: User, as: 'user', attributes: ['full_name'] }] },
-      { model: Patient, as: 'receiver',  include: [{ model: User, as: 'user', attributes: ['full_name'] }] },
+      { model: Patient, as: 'receiver', include: [{ model: User, as: 'user', attributes: ['full_name'] }] },
     ],
   });
 
@@ -145,17 +297,21 @@ const getGeneticRisks = async (patientId, doctorUserId) => {
   const familyData = [];
   for (const link of links) {
     const memberId = link.requester_id === patientId ? link.receiver_id : link.requester_id;
-    const member   = link.requester_id === patientId ? link.receiver   : link.requester;
-    const prescriptions = await Prescription.findAll({ where: { patient_id: memberId }, attributes: ['diagnosis'] });
+    const member = link.requester_id === patientId ? link.receiver : link.requester;
+    const prescriptions = await Prescription.findAll({
+      where: { patient_id: memberId },
+      attributes: ['diagnosis'],
+    });
+
     familyData.push({
       name: member.user.full_name,
       relation: link.relationship,
-      diagnoses: prescriptions.map((p) => p.diagnosis),
+      diagnoses: prescriptions.map((prescription) => prescription.diagnosis),
     });
   }
 
   const familyBlock = familyData
-    .map((f) => f.relation + ' (' + f.name + '): ' + (f.diagnoses.join(', ') || 'No recorded diagnoses'))
+    .map((familyMember) => `${familyMember.relation} (${familyMember.name}): ${familyMember.diagnoses.join(', ') || 'No recorded diagnoses'}`)
     .join('\n');
 
   const promptLines = [
@@ -171,25 +327,34 @@ const getGeneticRisks = async (patientId, doctorUserId) => {
   return { analysis, family_members: familyData };
 };
 
-// ─── 4. RE-SUMMARIZE A MEDICAL RECORD (on demand) ────────────────────────────
 const summarizeRecord = async (recordId, userId) => {
   const patient = await Patient.findOne({ where: { user_id: userId } });
-  const record  = await MedicalRecord.findByPk(recordId);
+  const record = await MedicalRecord.findByPk(recordId);
 
-  if (!record) throw { status: 404, message: 'Record not found.' };
-  if (record.patient_id !== patient.id) throw { status: 403, message: 'Access denied.' };
-  if (record.file_type !== 'pdf') throw { status: 400, message: 'AI summarization only works on PDF records.' };
+  if (!record) {
+    throw createHttpError(404, 'Record not found.');
+  }
 
-  const fs       = require('fs');
+  if (!patient || record.patient_id !== patient.id) {
+    throw createHttpError(403, 'Access denied.');
+  }
+
+  if (record.file_type !== 'pdf') {
+    throw createHttpError(400, 'AI summarization only works on PDF records.');
+  }
+
+  const fs = require('fs');
   const pdfParse = require('pdf-parse');
-  const path     = require('path');
+  const path = require('path');
 
   const filePath = path.join(__dirname, '../../../uploads', path.basename(record.file_url));
-  if (!fs.existsSync(filePath)) throw { status: 404, message: 'File not found on server.' };
+  if (!fs.existsSync(filePath)) {
+    throw createHttpError(404, 'File not found on server.');
+  }
 
-  const buffer  = fs.readFileSync(filePath);
+  const buffer = fs.readFileSync(filePath);
   const pdfData = await pdfParse(buffer);
-  const text    = pdfData.text.substring(0, 3000);
+  const text = pdfData.text.substring(0, 3000);
 
   const prompt = [
     'You are a medical AI. Read this document and write a 3-5 sentence summary for a doctor.',
@@ -203,4 +368,12 @@ const summarizeRecord = async (recordId, userId) => {
   return { summary, record };
 };
 
-module.exports = { chatWithBot, getPreVisitSummary, getGeneticRisks, summarizeRecord };
+module.exports = {
+  buildChatContext,
+  chatWithBot,
+  getEmbedding,
+  getGeneticRisks,
+  getPreVisitSummary,
+  searchDocuments,
+  summarizeRecord,
+};

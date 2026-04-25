@@ -14,7 +14,7 @@ const DoctorSchedule = sequelize.define('DoctorSchedule', {
   },
   day_of_week: {
     // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-    type: DataTypes.TINYINT,
+    type: DataTypes.SMALLINT,
     allowNull: false,
     validate: { min: 0, max: 6 },
   },
