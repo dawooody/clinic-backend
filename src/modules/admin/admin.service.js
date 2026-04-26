@@ -36,7 +36,35 @@ const getAllAppointments = async ({ status, doctor_id, date, page = 1, limit = 2
 const updateAppointment = async (id, updates) => {
   const appointment = await Appointment.findByPk(id);
   if (!appointment) throw { status: 404, message: 'Appointment not found.' };
-  await appointment.update(updates);
+
+  const allowedFields = [
+    'status',
+    'appointment_date',
+    'time_slot',
+    'patient_notes',
+    'doctor_notes',
+    'cancellation_reason',
+    'ai_chatbot_summary',
+    'ai_suggested_specialty',
+    'rating',
+  ];
+
+  const sanitizedUpdates = Object.fromEntries(
+    Object.entries(updates).filter(([key, value]) => allowedFields.includes(key) && value !== undefined)
+  );
+
+  if (Object.keys(sanitizedUpdates).length === 0) {
+    throw { status: 400, message: 'No valid appointment fields provided for update.' };
+  }
+
+  if (
+    sanitizedUpdates.status
+    && !['pending', 'confirmed', 'completed', 'cancelled'].includes(sanitizedUpdates.status)
+  ) {
+    throw { status: 400, message: 'Invalid appointment status.' };
+  }
+
+  await appointment.update(sanitizedUpdates);
   return appointment;
 };
 
@@ -96,12 +124,20 @@ const removeAllDoctors = async () => {
 
 // Admin creates a doctor account (doctors cannot self-register)
 const createDoctor = async ({ full_name, email, password, phone, specialty_id, bio, license_number, years_experience, consultation_fee }) => {
+  if (!full_name || !email || !password) {
+    throw { status: 400, message: 'full_name, email, and password are required.' };
+  }
+
   const existing = await User.findOne({ where: { email } });
   if (existing) throw { status: 409, message: 'Email already in use.' };
 
+  if (license_number) {
+    const existingLicense = await Doctor.findOne({ where: { license_number } });
+    if (existingLicense) throw { status: 409, message: 'License number already in use.' };
+  }
+
   const user = await User.create({ full_name, email, password, phone, role: 'doctor' });
   const doctor = await Doctor.create({
-    id: user.id, // Use the same ID for doctor profile
     user_id: user.id,
     specialty_id,
     bio,
@@ -142,14 +178,30 @@ const setDoctorSchedule = async (doctorId, schedules) => {
 const getDashboardStats = async () => {
   const today = new Date().toISOString().split('T')[0];
 
-  const [totalPatients, totalDoctors, todayAppointments, pendingAppointments] = await Promise.all([
+  const [
+    totalUsers,
+    totalPatients,
+    totalDoctors,
+    totalAppointments,
+    todayAppointments,
+    pendingAppointments,
+  ] = await Promise.all([
+    User.count(),
     Patient.count(),
     Doctor.count(),
+    Appointment.count(),
     Appointment.count({ where: { appointment_date: today } }),
     Appointment.count({ where: { status: 'pending' } }),
   ]);
 
-  return { totalPatients, totalDoctors, todayAppointments, pendingAppointments };
+  return {
+    totalUsers,
+    totalPatients,
+    totalDoctors,
+    totalAppointments,
+    todayAppointments,
+    pendingAppointments,
+  };
 };
 
 module.exports = {
