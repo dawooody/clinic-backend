@@ -35,7 +35,7 @@ Patient.hasMany(Appointment, { foreignKey: 'patient_id', as: 'appointments', onD
 Appointment.belongsTo(Patient, { foreignKey: 'patient_id', as: 'patient' });
 
 // Doctor ↔ Appointment  (one-to-many)
-Doctor.hasMany(Appointment, { foreignKey: 'doctor_id', as: 'appointments' });
+Doctor.hasMany(Appointment, { foreignKey: 'doctor_id', as: 'doctorAppointments' });
 Appointment.belongsTo(Doctor, { foreignKey: 'doctor_id', as: 'doctor' });
 
 // Appointment ↔ Prescription  (one-to-one)

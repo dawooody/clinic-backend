@@ -6,25 +6,22 @@ const { bookSchema, cancelSchema, rateSchema } = require('./appointments.validat
 
 router.use(protect);
 
-// ── Patient ──────────────────────────────────────
-router.post('/', roles('patient'), validate(bookSchema), ctrl.book);
-router.post('/:id/rate', roles('patient'), validate(rateSchema), ctrl.rate);
+// ── Patient ──────────────────────────────────────────────────────────────────
+router.post('/',              roles('patient'), validate(bookSchema), ctrl.book);
+router.post('/:id/rate',      roles('patient'), validate(rateSchema), ctrl.rate);
 
-// ── Doctor ───────────────────────────────────────
-router.get('/today', roles('doctor'), ctrl.getToday);  // ✅ لازم قبل /:id
-router.put('/:id/confirm', roles('doctor'), ctrl.confirm);
-router.put('/:id/complete', roles('doctor'), ctrl.complete);
-router.delete('/:id', roles('patient', 'doctor'), ctrl.remove);
+// ── Doctor ───────────────────────────────────────────────────────────────────
+router.get('/today',          roles('doctor'), ctrl.getToday);
+router.put('/:id/confirm',    roles('doctor'), ctrl.confirm);
+router.put('/:id/complete',   roles('doctor'), ctrl.complete);
 
+// ── Patient & Doctor ─────────────────────────────────────────────────────────
+router.put('/:id/cancel',     roles('patient', 'doctor'), validate(cancelSchema), ctrl.cancel);
+router.put('/:id/reschedule', roles('patient', 'doctor'), ctrl.reschedule);
+router.delete('/:id',         roles('patient', 'doctor'), ctrl.remove);
 
-// ── Shared ───────────────────────────────────────
-router.get('/', ctrl.getMyAppointments);
+// ── Shared ───────────────────────────────────────────────────────────────────
+router.get('/',    ctrl.getMyAppointments);
 router.get('/:id', ctrl.getById);
-router.put(
-  '/:id/cancel',
-  roles('patient', 'doctor'),   // ✅ بس الاتنين دول
-  validate(cancelSchema),
-  ctrl.cancel
-);
 
 module.exports = router;
