@@ -40,6 +40,8 @@ const Appointment = sequelize.define('Appointment', {
   },
 }, 
 {tableName: 'appointments',
+    underscored: true,
+
   indexes: [
     {
       unique: true,

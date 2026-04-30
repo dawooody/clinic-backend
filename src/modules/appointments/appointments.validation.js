@@ -2,7 +2,7 @@ const Joi = require('joi');
 
 const bookSchema = Joi.object({
   doctorId: Joi.string().uuid().required(),           // ✅ UUID فقط
-  appointmentDate: Joi.date().min('now').required(),  // ✅ مش في الماضي
+  appointmentDate: Joi.date().min(new Date(new Date().setHours(0,0,0,0))).required(),  // ✅ يقبل اليوم كله
   timeSlot: Joi.string()
     .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)          // ✅ format HH:MM بس
     .required(),

@@ -4,8 +4,16 @@ const { success, error, paginated } = require('../../utils/response');
 const getAllAppointments = async (req, res, next) => {
   try {
     const { status, doctor_id, date, page, limit } = req.query;
-    const { rows, count } = await service.getAllAppointments({ status, doctor_id, date, page, limit });
-    return paginated(res, rows, count, page || 1, limit || 20);
+    const data = await service.getAllAppointments({ status, doctor_id, date, page, limit });
+    return res.json({
+      success: true,
+      stats: data.stats,
+      data: data.rows,
+      total: data.count,
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 20,
+      pages: Math.ceil(data.count / (parseInt(limit) || 20)),
+    });
   } catch (err) { next(err); }
 };
 
@@ -36,12 +44,31 @@ const createDoctor = async (req, res, next) => {
     next(err);
   }
 };
+
 const getAllPatients = async (req, res, next) => {
   try {
     const { page, limit } = req.query;
-    const { rows, count } = await service.getAllPatients({ page, limit });
-    return paginated(res, rows, count, page || 1, limit || 20);
+    const { rows, count, stats } = await service.getAllPatients({ page, limit });
+    return res.json({
+      success: true,
+      stats,
+      data: rows,
+      total: count,
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 20,
+      pages: Math.ceil(count / (parseInt(limit) || 20)),
+    });
   } catch (err) { next(err); }
+};
+
+const getPatientById = async (req, res, next) => {
+  try {
+    const data = await service.getPatientById(req.params.id);
+    return success(res, data);
+  } catch (err) {
+    if (err.status) return error(res, err.message, err.status);
+    next(err);
+  }
 };
 
 const removeDoctor = async (req, res, next) => {
@@ -102,6 +129,27 @@ const getDashboardStats = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const getWeeklyVisits = async (req, res, next) => {
+  try {
+    const data = await service.getWeeklyVisits();
+    return success(res, data);
+  } catch (err) { next(err); }
+};
+
+const getMonthlyAppointments = async (req, res, next) => {
+  try {
+    const data = await service.getMonthlyAppointments();
+    return success(res, data);
+  } catch (err) { next(err); }
+};
+
+const getNextAppointments = async (req, res, next) => {
+  try {
+    const data = await service.getNextAppointments();
+    return success(res, data);
+  } catch (err) { next(err); }
+};
+
 module.exports = {
   getAllAppointments,
   updateAppointment,
@@ -112,6 +160,10 @@ module.exports = {
   setDoctorSchedule,
   getDashboardStats,
   getAllPatients,
+  getPatientById,
   removeAllDoctors,
   removeDoctor,
+  getWeeklyVisits,
+  getMonthlyAppointments,
+  getNextAppointments,
 };
