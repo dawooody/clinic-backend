@@ -89,12 +89,14 @@ const getEmbedding = async (text) => {
   return embedding;
 };
 
-const insertDocument = async (content, embedding) => {
+const insertDocument = async ({ disease, specialty, content, embedding }) => {
   if (!supabase) {
     throw new Error('Supabase client is not initialized.');
   }
 
   const { error } = await supabase.from('documents').insert({
+    disease,
+    specialty,
     content,
     embedding: formatEmbeddingForPgVector(embedding),
   });
@@ -117,10 +119,16 @@ const readDiseaseData = async () => {
 
 const ingestDiseaseRecord = async (record) => {
   const diseaseName = normalizeValue(record?.disease);
+  const specialty = normalizeValue(record?.specialty);
   const content = formatDiseaseRecord(record);
   const embedding = await getEmbedding(content);
 
-  await insertDocument(content, embedding);
+  await insertDocument({
+    disease: diseaseName,
+    specialty,
+    content,
+    embedding,
+  });
   console.log(`Inserted: ${diseaseName}`);
 };
 

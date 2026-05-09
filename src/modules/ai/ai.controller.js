@@ -8,7 +8,12 @@ const search = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      results,
+      results: results.map(({ disease, specialty, similarity, content }) => ({
+        disease,
+        specialty,
+        similarity,
+        content,
+      })),
     });
   } catch (err) {
     if (err.status) {
@@ -22,12 +27,22 @@ const search = async (req, res, next) => {
 const chat = async (req, res, next) => {
   try {
     const { message } = req.body;
-    const data = await service.buildChatContext(message);
+    const data = await service.prepareChatContext(message);
 
     return res.status(200).json({
       success: true,
+      detectedLanguage: data.detectedLanguage,
+      language: data.detectedLanguage,
       context: data.context,
+      fallback: data.fallback,
       message: data.message,
+      originalMessage: data.originalMessage,
+      prompt: data.prompt,
+      reply: data.reply,
+      requiresTranslation: data.requiresTranslation,
+      searchMessage: data.searchMessage,
+      similarityThreshold: data.similarityThreshold,
+      filteredResults: data.results,
       results: data.results,
     });
   } catch (err) {

@@ -1,18 +1,27 @@
 const { askGemini } = require('../../config/gemini');
-const { createClient } = require('@supabase/supabase-js');
+const { askGroq } = require('./llm.helpers');
+const {
+  buildChatContext,
+  buildMedicalPrompt,
+} = require('./prompt.builders');
+const { translateToEnglish } = require('./translation.helpers');
+const { detectLanguage } = require('./language.helpers');
+const { generateEmbedding } = require('./embedding.helpers');
+const {
+  filterResultsBySimilarity,
+  prepareRetrievalPipeline,
+  retrieveSimilarDiseases,
+  searchDocuments,
+} = require('./retrieval.service');
 const {
   Patient, Doctor, Appointment, MedicalRecord,
   Prescription, SymptomLog, FamilyLink, User,
 } = require('../../models');
 const { Op } = require('sequelize');
 
-const EMBEDDING_MODEL = 'Xenova/bge-base-en-v1.5';
-const EMBEDDING_SIZE = 768;
-const SEARCH_RESULT_LIMIT = 5;
-
-let extractor;
-let extractorPromise;
-let supabase;
+const NO_RAG_MATCH_MESSAGE = 'I could not find a confident match in the medical knowledge base yet. Please add more symptoms, duration, severity, and any relevant medical history.';
+const RAG_CONTEXT_READY_MESSAGE = 'Medical response generated successfully.';
+const getEmbedding = generateEmbedding;
 
 const createHttpError = (status, message) => {
   const error = new Error(message);
@@ -20,127 +29,25 @@ const createHttpError = (status, message) => {
   return error;
 };
 
-const getSupabaseClient = () => {
-  if (supabase) {
-    return supabase;
-  }
-
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
-    throw createHttpError(500, 'Supabase configuration is missing.');
-  }
-
-  supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-  return supabase;
-};
-
-const getExtractor = async () => {
-  if (extractor) {
-    return extractor;
-  }
-
-  if (!extractorPromise) {
-    extractorPromise = import('@xenova/transformers')
-      .then(({ pipeline }) => pipeline('feature-extraction', EMBEDDING_MODEL))
-      .then((loadedExtractor) => {
-        extractor = loadedExtractor;
-        return extractor;
-      })
-      .catch((error) => {
-        extractorPromise = null;
-        throw error;
-      });
-  }
-
-  return extractorPromise;
-};
-
-const getEmbedding = async (text) => {
-  const trimmedText = text?.trim();
-
-  if (!trimmedText) {
-    throw createHttpError(400, 'Query text is required.');
-  }
-
-  try {
-    const embeddingExtractor = await getExtractor();
-    const output = await embeddingExtractor(trimmedText, {
-      pooling: 'mean',
-      normalize: true,
-    });
-
-    const embedding = Array.from(output.data);
-
-    if (embedding.length !== EMBEDDING_SIZE) {
-      throw new Error(`Expected embedding size ${EMBEDDING_SIZE}, received ${embedding.length}.`);
-    }
-
-    return embedding;
-  } catch (error) {
-    if (error.status) {
-      throw error;
-    }
-
-    throw createHttpError(500, `Failed to generate embedding: ${error.message}`);
-  }
-};
-
-const searchDocuments = async (query, limit = SEARCH_RESULT_LIMIT) => {
-  const trimmedQuery = query?.trim();
-
-  if (!trimmedQuery) {
-    throw createHttpError(400, 'Query is required.');
-  }
-
-  const embedding = await getEmbedding(trimmedQuery);
-
-  try {
-    const client = getSupabaseClient();
-    const { data, error } = await client.rpc('match_documents', {
-      query_embedding: embedding,
-      match_count: limit,
-    });
-
-    if (error) {
-      throw error;
-    }
-
-    if (!Array.isArray(data)) {
-      return [];
-    }
-
-    return data
-      .map((row) => row?.content)
-      .filter(Boolean)
-      .slice(0, limit);
-  } catch (error) {
-    throw createHttpError(500, `Failed to search documents: ${error.message}`);
-  }
-};
-
-const buildChatContext = async (message) => {
-  const trimmedMessage = message?.trim();
-
-  if (!trimmedMessage) {
-    throw createHttpError(400, 'Message is required.');
-  }
-
-  const results = await searchDocuments(trimmedMessage, SEARCH_RESULT_LIMIT);
-  const numberedResults = results.length > 0
-    ? results.map((result, index) => `${index + 1}. ${result}`).join('\n')
-    : 'No relevant medical data found.';
-
-  const context = [
-    'Based on the following medical data:',
-    '',
-    numberedResults,
-    '',
-    `User question: ${trimmedMessage}`,
-  ].join('\n');
+const prepareChatContext = async (message, options = {}) => {
+  const retrieval = await prepareRetrievalPipeline(message, options);
+  const context = buildChatContext(retrieval.results, retrieval.originalMessage);
+  const prompt = buildMedicalPrompt(context, retrieval.originalMessage, retrieval.detectedLanguage);
+  const hasResults = retrieval.results.length > 0;
+  const reply = await askGroq(prompt);
 
   return {
+    detectedLanguage: retrieval.detectedLanguage,
+    fallback: !hasResults,
     context,
-    message: 'This is where LLM will generate the final answer later',
-    results,
+    originalMessage: retrieval.originalMessage,
+    prompt,
+    reply,
+    requiresTranslation: retrieval.requiresTranslation,
+    searchMessage: retrieval.searchMessage,
+    message: hasResults ? RAG_CONTEXT_READY_MESSAGE : NO_RAG_MATCH_MESSAGE,
+    results: retrieval.results,
+    similarityThreshold: retrieval.similarityThreshold,
   };
 };
 
@@ -370,10 +277,18 @@ const summarizeRecord = async (recordId, userId) => {
 
 module.exports = {
   buildChatContext,
+  buildMedicalPrompt,
   chatWithBot,
+  detectLanguage,
+  filterResultsBySimilarity,
+  generateEmbedding,
   getEmbedding,
   getGeneticRisks,
   getPreVisitSummary,
+  prepareChatContext,
+  retrieveSimilarDiseases,
   searchDocuments,
   summarizeRecord,
+  askGroq,
+  translateToEnglish,
 };
