@@ -31,4 +31,19 @@ const getPatientById = async (req, res, next) => {
   }
 };
 
-module.exports = { getProfile, updateProfile, getPatientById };
+const getDoctorPatients = async (req, res, next) => {
+  try {
+    const data = await service.getDoctorPatients(req.user.id);
+    return success(res, data);
+  } catch (err) {
+    if (err.status) return error(res, err.message, err.status);
+    next(err);
+  }
+};
+
+module.exports = {
+  getProfile,
+  updateProfile,
+  getPatientById,
+  getDoctorPatients,
+};
