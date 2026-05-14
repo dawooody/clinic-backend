@@ -69,23 +69,30 @@ const getDoctorPatients = async (doctorUserId) => {
   }
 
   const patients = await Patient.findAll({
-    include: [
-      {
-        model: Appointment,
-        as: 'appointments',
-        where: {
-          doctor_id: doctor.id,
-        },
-        attributes: [],
+  attributes: ['id', 'health_status'],
+  include: [
+    {
+      model: Appointment,
+      as: 'appointments',
+      where: {
+        doctor_id: doctor.id,
       },
-      {
-        model: User,
-        as: 'user',
-        attributes: ['id', 'full_name', 'email', 'phone', 'profile_photo'],
-      },
-    ],
-    distinct: true,
-  });
+      attributes: [],
+    },
+    {
+      model: User,
+      as: 'user',
+      attributes: [
+        'id',
+        'full_name',
+        'email',
+        'phone',
+        'profile_photo',
+      ],
+    },
+  ],
+  distinct: true,
+});
 
   return patients;
 };
