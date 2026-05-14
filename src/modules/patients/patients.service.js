@@ -1,4 +1,4 @@
-const { Patient, User } = require('../../models');
+const { Patient, User, Appointment, Doctor } = require('../../models');
 const path = require('path');
 
 const getProfile = async (userId) => {
@@ -58,4 +58,41 @@ const getPatientById = async (patientId) => {
   return patient;
 };
 
-module.exports = { getProfile, updateProfile, getPatientById };
+const getDoctorPatients = async (doctorUserId) => {
+  // Find doctor profile using logged-in user id
+  const doctor = await Doctor.findOne({
+    where: { user_id: doctorUserId },
+  });
+
+  if (!doctor) {
+    throw { status: 404, message: 'Doctor not found.' };
+  }
+
+  const patients = await Patient.findAll({
+    include: [
+      {
+        model: Appointment,
+        as: 'appointments',
+        where: {
+          doctor_id: doctor.id,
+        },
+        attributes: [],
+      },
+      {
+        model: User,
+        as: 'user',
+        attributes: ['id', 'full_name', 'email', 'phone', 'profile_photo'],
+      },
+    ],
+    distinct: true,
+  });
+
+  return patients;
+};
+
+module.exports = {
+  getProfile,
+  updateProfile,
+  getPatientById,
+  getDoctorPatients,
+};
