@@ -256,14 +256,21 @@ const getWeeklyVisits = async () => {
 // ─── MONTHLY APPOINTMENTS (آخر 7 شهور) ───────────────────────────────────────
 const getMonthlyAppointments = async () => {
   const result = await sequelize.query(`
-    SELECT 
-      TO_CHAR(appointment_date::date, 'Mon YYYY') AS month,
-      TO_CHAR(appointment_date::date, 'YYYY-MM') AS month_key,
-      COUNT(*) AS total
-    FROM appointments
-    WHERE appointment_date >= CURRENT_DATE - INTERVAL '7 months'
-    GROUP BY month, month_key
-    ORDER BY month_key ASC
+    WITH months AS (
+      SELECT generate_series(
+        date_trunc('month', CURRENT_DATE - INTERVAL '6 months'),
+        date_trunc('month', CURRENT_DATE),
+        interval '1 month'
+      ) AS month_start
+    )
+    SELECT
+      TO_CHAR(month_start, 'Mon YYYY') AS month,
+      COUNT(a.id) AS total
+    FROM months m
+    LEFT JOIN appointments a
+      ON date_trunc('month', a.appointment_date::date) = m.month_start
+    GROUP BY month_start
+    ORDER BY month_start ASC
   `, { type: sequelize.QueryTypes.SELECT });
 
   return result.map(r => ({
