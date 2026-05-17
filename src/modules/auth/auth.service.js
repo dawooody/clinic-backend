@@ -1,5 +1,6 @@
 const { User, Patient, Doctor } = require('../../models');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../../utils/jwt');
+const sendEmail = require('../../utils/sendEmail');
 
 /**
  * Register a new user (patient by default)
@@ -26,14 +27,94 @@ const register = async ({ full_name, email, password, phone, role = 'patient' })
   const user = await User.create({ full_name, email, password, phone, role });
   await Patient.create({ user_id: user.id });
 
-  const accessToken  = generateAccessToken({ id: user.id, role: user.role });
-  const refreshToken = generateRefreshToken({ id: user.id });
-  await user.update({ refresh_token: refreshToken });
+   // Generate OTP
+  const verificationCode = Math.floor(
+    100000 + Math.random() * 900000
+  ).toString();
+
+    // Save OTP
+  user.verification_code = verificationCode;
+
+  user.verification_code_expiry = new Date(
+    Date.now() + 10 * 60 * 1000
+  );
+
+  await user.save();
+
+    // Send verification email
+  try {
+  await sendEmail(
+    user.email,
+    'Verify Your Email',
+    `
+      <h2>Welcome to our app</h2>
+
+      <p>Your verification code is:</p>
+
+      <h1>${verificationCode}</h1>
+
+      <p>This code expires in 10 minutes.</p>
+    `
+  );
+} catch (err) {
+  console.error('Email send error:', err);
+
+  throw {
+    status: 500,
+    message: 'Failed to send verification email.',
+  };
+}
+
+  // no tokens before verification
+  return {
+    message: 'Verification code sent to your email.',
+  };
+ 
+};
+
+/**
+ * Verify Email OTP
+ */
+const verifyEmail = async (email, code) => {
+
+  const user = await User.findOne({
+    where: { email },
+  });
+
+  if (!user) {
+    throw {
+      status: 404,
+      message: 'User not found.',
+    };
+  }
+
+  if (user.is_verified) {
+    throw {
+      status: 400,
+      message: 'User already verified.',
+    };
+  }
+
+  if (
+    user.verification_code !== code ||
+    new Date() > user.verification_code_expiry
+  ) {
+    throw {
+      status: 400,
+      message: 'Invalid or expired verification code.',
+    };
+  }
+
+  user.is_verified = true;
+
+  user.verification_code = null;
+
+  user.verification_code_expiry = null;
+
+  await user.save();
 
   return {
-    user: { id: user.id, full_name: user.full_name, email: user.email, role: user.role },
-    accessToken,
-    refreshToken,
+    message: 'Email verified successfully.',
   };
 };
 
@@ -43,6 +124,14 @@ const register = async ({ full_name, email, password, phone, role = 'patient' })
 const login = async ({ email, password }) => {
   const user = await User.findOne({ where: { email } });
   if (!user) throw { status: 401, message: 'Invalid email or password.' };
+
+  // NEW
+  if (!user.is_verified) {
+    throw {
+      status: 403,
+      message: 'Please verify your email first.',
+    };
+  }
 
   if (!user.is_active) throw { status: 403, message: 'Account deactivated. Contact admin.' };
 
@@ -99,4 +188,4 @@ const logout = async (userId) => {
   await User.update({ refresh_token: null }, { where: { id: userId } });
 };
 
-module.exports = { register, login, refreshToken, logout };
+module.exports = { register, verifyEmail, login, refreshToken, logout };

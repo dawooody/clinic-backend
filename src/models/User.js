@@ -50,6 +50,18 @@ const User = sequelize.define('User', {
     type: DataTypes.DATE,
     allowNull: true,
   },
+  is_verified: {
+  type: DataTypes.BOOLEAN,
+  defaultValue: false,
+},
+
+verification_code: {
+  type: DataTypes.STRING,
+},
+
+verification_code_expiry: {
+  type: DataTypes.DATE,
+},
 }, {
   tableName: 'users',
   hooks: {
