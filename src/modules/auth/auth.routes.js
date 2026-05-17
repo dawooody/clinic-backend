@@ -8,7 +8,7 @@ const sendEmail = require('../../utils/sendEmail');
 // ─── Public routes ───────────────────────────────────────────────────────────
 router.post('/register',      ctrl.register);
 router.post('/verify-email', ctrl.verifyEmail);
-router.post( '/resend-verification-code', ctrl.resendVerificationCode);
+router.post('/resend-verification-code', ctrl.resendVerificationCode);
 router.post('/login',         ctrl.login);
 router.post('/refresh-token', ctrl.refreshToken);
 
