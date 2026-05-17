@@ -48,6 +48,27 @@ const verifyEmail = async (req, res, next) => {
   }
 };
 
+const resendVerificationCode = async (req, res, next) => {
+
+  try {
+
+    const data =
+      await authService.resendVerificationCode(
+        req.body.email
+      );
+
+    return success(res, data);
+
+  } catch (err) {
+
+    if (err.status) {
+      return error(res, err.message, err.status);
+    }
+
+    next(err);
+  }
+};
+
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -84,4 +105,4 @@ const getMe = async (req, res) => {
   return success(res, { user: req.user }, 'Current user');
 };
 
-module.exports = { register, verifyEmail, login, refreshToken, logout, getMe };
+module.exports = { register, verifyEmail, resendVerificationCode, login, refreshToken, logout, getMe };

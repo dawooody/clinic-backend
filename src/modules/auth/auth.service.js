@@ -118,6 +118,60 @@ const verifyEmail = async (email, code) => {
   };
 };
 
+const resendVerificationCode = async (email) => {
+
+  const user = await User.findOne({
+    where: { email },
+  });
+
+  if (!user) {
+    throw {
+      status: 404,
+      message: 'User not found.',
+    };
+  }
+
+  if (user.is_verified) {
+    throw {
+      status: 400,
+      message: 'User already verified.',
+    };
+  }
+
+  // Generate new OTP
+  const verificationCode = Math.floor(
+    100000 + Math.random() * 900000
+  ).toString();
+
+  // Save new OTP
+  user.verification_code = verificationCode;
+
+  user.verification_code_expiry = new Date(
+    Date.now() + 10 * 60 * 1000
+  );
+
+  await user.save();
+
+  // Send email
+  await sendEmail(
+    user.email,
+    'New Verification Code',
+    `
+      <h2>Email Verification</h2>
+
+      <p>Your new verification code is:</p>
+
+      <h1>${verificationCode}</h1>
+
+      <p>This code expires in 10 minutes.</p>
+    `
+  );
+
+  return {
+    message: 'New verification code sent.',
+  };
+};
+
 /**
  * Login - returns tokens for the mobile app to store
  */
@@ -188,4 +242,4 @@ const logout = async (userId) => {
   await User.update({ refresh_token: null }, { where: { id: userId } });
 };
 
-module.exports = { register, verifyEmail, login, refreshToken, logout };
+module.exports = { register, verifyEmail, resendVerificationCode, login, refreshToken, logout };
