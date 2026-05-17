@@ -3,31 +3,75 @@ const ctrl   = require('./auth.controller');
 const { protect }  = require('../../middleware/auth');
 const { User }     = require('../../models');
 const { success, error } = require('../../utils/response');
+const sendEmail = require('../../utils/sendEmail');
 
 // ─── Public routes ───────────────────────────────────────────────────────────
 router.post('/register',      ctrl.register);
+router.post('/verify-email', ctrl.verifyEmail);
 router.post('/login',         ctrl.login);
 router.post('/refresh-token', ctrl.refreshToken);
 
 // ─── Forgot / Reset password ─────────────────────────────────────────────────
 router.post('/forgot-password', async (req, res, next) => {
   try {
-    const { email } = req.body;
-    if (!email) return error(res, 'Email is required.', 400);
 
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      return success(res, {}, 'If this email exists, a reset code has been sent.');
+    const { email } = req.body;
+
+    if (!email) {
+      return error(res, 'Email is required.', 400);
     }
 
-    const code   = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiry = new Date(Date.now() + 15 * 60 * 1000);
+    const user = await User.findOne({
+      where: { email },
+    });
 
-    await user.update({ reset_code: code, reset_code_expiry: expiry });
+    // Security:
+    // Never reveal if email exists or not
+    if (!user) {
+      return success(
+        res,
+        {},
+        'If this email exists, a reset code has been sent.'
+      );
+    }
 
-    // For production: send via SMS/email. For MVP: return directly.
-    return success(res, { reset_code: code }, 'Reset code generated. Valid for 15 minutes.');
-  } catch (err) { next(err); }
+    const code = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+
+    const expiry = new Date(
+      Date.now() + 15 * 60 * 1000
+    );
+
+    await user.update({
+      reset_code: code,
+      reset_code_expiry: expiry,
+    });
+
+    // Send email using Resend
+    await sendEmail(
+      user.email,
+      'Password Reset Code',
+      `
+        <h2>Password Reset</h2>
+
+        <p>Your reset code is:</p>
+
+        <h1>${code}</h1>
+
+        <p>This code expires in 15 minutes.</p>
+      `
+    );
+
+    return success(
+      res,
+      {},
+      'Reset code sent to email.'
+    );
+
+  } catch (err) {
+    next(err);
+  }
 });
 
 router.post('/reset-password', async (req, res, next) => {
