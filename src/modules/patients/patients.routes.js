@@ -9,6 +9,8 @@ router.get('/profile',    protect, roles('patient'),          ctrl.getProfile);
 router.put('/profile',    protect, roles('patient'), upload.single('profile_photo'), ctrl.updateProfile);
 
 // Doctor/Admin: view a specific patient
+
+router.get(  '/doctor/my-patients',  protect,  roles('doctor'),  ctrl.getDoctorPatients);
 router.get('/:id',        protect, roles('doctor', 'admin'),  ctrl.getPatientById);
 
 module.exports = router;
