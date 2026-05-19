@@ -1,9 +1,23 @@
-const { askGemini } = require('../../config/gemini');
+const { analyzeMedicalReport: analyzeMedicalReportWithGemini, askGemini } = require('../../config/gemini');
+const { v4: uuidv4 } = require('uuid');
 const { askGroq } = require('./llm.helpers');
 const {
   buildChatContext,
   buildMedicalPrompt,
 } = require('./prompt.builders');
+const { buildMemoryContext } = require('./memory.helpers');
+const {
+  DEFAULT_RECENT_MESSAGE_LIMIT,
+  getConversationMessageCount,
+  getConversationSummary,
+  getRecentMessages,
+  storeChatMessage,
+  storeChatMessages,
+} = require('./memory.repository');
+const {
+  SUMMARY_UPDATE_INTERVAL,
+  updateConversationSummary,
+} = require('./summary.helpers');
 const { translateToEnglish } = require('./translation.helpers');
 const { detectLanguage } = require('./language.helpers');
 const { generateEmbedding } = require('./embedding.helpers');
@@ -30,16 +44,54 @@ const createHttpError = (status, message) => {
 };
 
 const prepareChatContext = async (message, options = {}) => {
-  const retrieval = await prepareRetrievalPipeline(message, options);
+  const originalMessage = message?.trim();
+
+  if (!originalMessage) {
+    throw createHttpError(400, 'Message is required.');
+  }
+
+  const conversationId = options.conversationId?.trim() || uuidv4();
+  const recentMessageLimit = options.recentMessageLimit || DEFAULT_RECENT_MESSAGE_LIMIT;
+  const [summary, recentMessages, retrieval] = await Promise.all([
+    getConversationSummary(conversationId),
+    getRecentMessages(conversationId, recentMessageLimit),
+    prepareRetrievalPipeline(originalMessage, options),
+  ]);
+
+  const memoryContext = buildMemoryContext(summary, recentMessages);
   const context = buildChatContext(retrieval.results, retrieval.originalMessage);
-  const prompt = buildMedicalPrompt(context, retrieval.originalMessage, retrieval.detectedLanguage);
+  const prompt = buildMedicalPrompt(
+    context,
+    retrieval.originalMessage,
+    retrieval.detectedLanguage,
+    memoryContext,
+  );
   const hasResults = retrieval.results.length > 0;
   const reply = await askGroq(prompt);
+  await storeChatMessages(conversationId, [
+    { role: 'user', message: retrieval.originalMessage },
+    { role: 'assistant', message: reply },
+  ]);
+
+  const messageCount = await getConversationMessageCount(conversationId);
+  let summaryUpdated = false;
+  let summaryUpdateError = null;
+
+  if (messageCount > 0 && messageCount % SUMMARY_UPDATE_INTERVAL === 0) {
+    try {
+      await updateConversationSummary(conversationId);
+      summaryUpdated = true;
+    } catch (error) {
+      summaryUpdateError = error.message;
+    }
+  }
 
   return {
+    conversationId,
     detectedLanguage: retrieval.detectedLanguage,
     fallback: !hasResults,
     context,
+    memoryContext,
     originalMessage: retrieval.originalMessage,
     prompt,
     reply,
@@ -48,6 +100,36 @@ const prepareChatContext = async (message, options = {}) => {
     message: hasResults ? RAG_CONTEXT_READY_MESSAGE : NO_RAG_MATCH_MESSAGE,
     results: retrieval.results,
     similarityThreshold: retrieval.similarityThreshold,
+    summaryUpdated,
+    summaryUpdateError,
+  };
+};
+
+const analyzeMedicalReport = async (file, options = {}) => {
+  const conversationId = options.conversationId?.trim() || uuidv4();
+  const summary = await analyzeMedicalReportWithGemini(file);
+  const messageType = file.mimetype?.startsWith('image/')
+    ? 'image_analysis'
+    : 'report_summary';
+
+  await storeChatMessage(conversationId, 'assistant', summary, messageType);
+
+  let summaryUpdated = false;
+  let summaryUpdateError = null;
+
+  try {
+    await updateConversationSummary(conversationId);
+    summaryUpdated = true;
+  } catch (error) {
+    summaryUpdateError = error.message;
+  }
+
+  return {
+    conversationId,
+    message_type: messageType,
+    summary,
+    summaryUpdated,
+    summaryUpdateError,
   };
 };
 
@@ -276,6 +358,7 @@ const summarizeRecord = async (recordId, userId) => {
 };
 
 module.exports = {
+  analyzeMedicalReport,
   buildChatContext,
   buildMedicalPrompt,
   chatWithBot,

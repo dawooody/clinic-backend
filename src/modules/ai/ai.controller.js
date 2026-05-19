@@ -26,15 +26,19 @@ const search = async (req, res, next) => {
 
 const chat = async (req, res, next) => {
   try {
-    const { message } = req.body;
-    const data = await service.prepareChatContext(message);
+    const { conversationId, conversation_id, message } = req.body;
+    const data = await service.prepareChatContext(message, {
+      conversationId: conversationId || conversation_id,
+    });
 
     return res.status(200).json({
       success: true,
+      conversationId: data.conversationId,
       detectedLanguage: data.detectedLanguage,
       language: data.detectedLanguage,
       context: data.context,
       fallback: data.fallback,
+      memoryContext: data.memoryContext,
       message: data.message,
       originalMessage: data.originalMessage,
       prompt: data.prompt,
@@ -42,6 +46,8 @@ const chat = async (req, res, next) => {
       requiresTranslation: data.requiresTranslation,
       searchMessage: data.searchMessage,
       similarityThreshold: data.similarityThreshold,
+      summaryUpdated: data.summaryUpdated,
+      summaryUpdateError: data.summaryUpdateError,
       filteredResults: data.results,
       results: data.results,
     });
@@ -54,11 +60,14 @@ const chat = async (req, res, next) => {
   }
 };
 
-const chatbot = async (req, res, next) => {
+const analyzeReport = async (req, res, next) => {
   try {
-    const { messages } = req.body;
-    const data = await service.chatWithBot(messages);
-    return success(res, data);
+    const { conversationId, conversation_id } = req.body;
+    const data = await service.analyzeMedicalReport(req.file, {
+      conversationId: conversationId || conversation_id,
+    });
+
+    return success(res, data, 'Report analyzed and stored in chat memory', 201);
   } catch (err) {
     if (err.status) {
       return error(res, err.message, err.status);
@@ -76,7 +85,6 @@ const preVisitSummary = async (req, res, next) => {
     if (err.status) {
       return error(res, err.message, err.status);
     }
-
     return next(err);
   }
 };
@@ -108,8 +116,8 @@ const summarizeRecord = async (req, res, next) => {
 };
 
 module.exports = {
+  analyzeReport,
   chat,
-  chatbot,
   geneticRisks,
   preVisitSummary,
   search,

@@ -53,8 +53,15 @@ const buildChatContext = (results = [], originalMessage = '') => {
   ].join('\n');
 };
 
-const buildMedicalPrompt = (context, originalMessage, language = 'en') => {
+const buildMedicalPrompt = (context, originalMessage, language = 'en', memoryContext = '') => {
   const responseLanguage = language === 'ar' ? 'Arabic' : 'English';
+  const cleanMemoryContext = memoryContext?.trim() || [
+    'Conversation Summary:',
+    'None available.',
+    '',
+    'Recent Messages:',
+    'None available.',
+  ].join('\n');
 
   return [
     'You are a careful medical assistant for a clinic application.',
@@ -68,10 +75,12 @@ const buildMedicalPrompt = (context, originalMessage, language = 'en') => {
     'Return only the final response that should be shown to the user.',
     'If the retrieved context has no confident matches, say that more details are needed and ask one or two useful follow-up questions.',
     '',
-    'Retrieved medical context:',
+    cleanMemoryContext,
+    '',
+    'Retrieved Medical RAG Context:',
     context || 'No context available.',
     '',
-    'Original user message:',
+    'Current User Message:',
     originalMessage || 'Not provided',
   ].join('\n');
 };

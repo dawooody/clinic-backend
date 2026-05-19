@@ -1,31 +1,16 @@
-const { createClient } = require('@supabase/supabase-js');
 const { generateEmbedding } = require('./embedding.helpers');
 const { createSearchMessage, detectLanguage } = require('./language.helpers');
 const { extractStructuredContentField } = require('./prompt.builders');
 const { translateToEnglish } = require('./translation.helpers');
+const { getSupabaseClient } = require('./supabase.client');
 
 const SEARCH_RESULT_LIMIT = 5;
 const DEFAULT_SIMILARITY_THRESHOLD = 0.72;
-
-let supabase;
 
 const createHttpError = (status, message) => {
   const error = new Error(message);
   error.status = status;
   return error;
-};
-
-const getSupabaseClient = () => {
-  if (supabase) {
-    return supabase;
-  }
-
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
-    throw createHttpError(500, 'Supabase configuration is missing.');
-  }
-
-  supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-  return supabase;
 };
 
 const getSimilarityThreshold = (threshold) => {

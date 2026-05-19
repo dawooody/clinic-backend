@@ -17,8 +17,13 @@ const errorHandler = (err, req, res, next) => {
     return res.status(400).json({ success: false, message: 'File too large. Max 10MB.' });
   }
 
+  // Multer wrong field name or too many files
+  if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+    return res.status(400).json({ success: false, message: 'Upload a single file using the "file" field.' });
+  }
+
   // Multer wrong file type
-  if (err.message && err.message.includes('Only JPG')) {
+  if (err.status === 400 || (err.message && err.message.includes('Only JPG'))) {
     return res.status(400).json({ success: false, message: err.message });
   }
 
