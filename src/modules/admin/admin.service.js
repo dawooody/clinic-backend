@@ -335,7 +335,7 @@ const createDoctor = async ({ full_name, email, password, phone, specialty_id, b
   const existing = await User.findOne({ where: { email } });
   if (existing) throw { status: 409, message: 'Email already in use.' };
 
-  const user = await User.create({ full_name, email, password, phone, role: 'doctor' });
+  const user = await User.create({ full_name, email, password, phone, role: 'doctor',  is_verified: true });
   const doctor = await Doctor.create({
     id: user.id,
     user_id: user.id,
