@@ -325,6 +325,8 @@ const removeAllDoctors = async () => {
 
 // ─── CREATE DOCTOR ────────────────────────────────────────────────────────────
 const createDoctor = async ({ full_name, email, password, phone, specialty_id, bio, license_number, years_experience, consultation_fee }) => {
+  // Email must be unique across all users; full_name is intentionally NOT
+  // checked for uniqueness (multiple doctors can share the same display name).
   const existing = await User.findOne({ where: { email } });
   if (existing) throw { status: 409, message: 'Email already in use.' };
 
