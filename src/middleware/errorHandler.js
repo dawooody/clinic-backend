@@ -19,7 +19,8 @@ const errorHandler = (err, req, res, next) => {
 
   // Multer wrong field name or too many files
   if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-    return res.status(400).json({ success: false, message: 'Upload a single file using the "file" field.' });
+    const uploadField = req.originalUrl?.includes('/api/ai/voice-chat') ? 'audio' : 'file';
+    return res.status(400).json({ success: false, message: `Upload a single file using the "${uploadField}" field.` });
   }
 
   // Multer wrong file type

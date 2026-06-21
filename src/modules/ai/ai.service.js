@@ -1,5 +1,4 @@
 const { analyzeMedicalReport: analyzeMedicalReportWithGemini, askGemini } = require('../../config/gemini');
-const { v4: uuidv4 } = require('uuid');
 const { askGroq } = require('./llm.helpers');
 const {
   buildChatContext,
@@ -27,6 +26,7 @@ const {
   retrieveSimilarDiseases,
   searchDocuments,
 } = require('./retrieval.service');
+const { resolveConversationForUser, touchConversation } = require('./conversation.service');
 const {
   Patient, Doctor, Appointment, MedicalRecord,
   Prescription, SymptomLog, FamilyLink, User,
@@ -50,7 +50,12 @@ const prepareChatContext = async (message, options = {}) => {
     throw createHttpError(400, 'Message is required.');
   }
 
-  const conversationId = options.conversationId?.trim() || uuidv4();
+  const conversation = await resolveConversationForUser({
+    conversationId: options.conversationId,
+    userId: options.userId,
+    title: options.title,
+  });
+  const conversationId = conversation.id;
   const recentMessageLimit = options.recentMessageLimit || DEFAULT_RECENT_MESSAGE_LIMIT;
   const [summary, recentMessages, retrieval] = await Promise.all([
     getConversationSummary(conversationId),
@@ -72,6 +77,7 @@ const prepareChatContext = async (message, options = {}) => {
     { role: 'user', message: retrieval.originalMessage },
     { role: 'assistant', message: reply },
   ]);
+  await touchConversation(conversationId);
 
   const messageCount = await getConversationMessageCount(conversationId);
   let summaryUpdated = false;
@@ -106,13 +112,19 @@ const prepareChatContext = async (message, options = {}) => {
 };
 
 const analyzeMedicalReport = async (file, options = {}) => {
-  const conversationId = options.conversationId?.trim() || uuidv4();
+  const conversation = await resolveConversationForUser({
+    conversationId: options.conversationId,
+    userId: options.userId,
+    title: options.title,
+  });
+  const conversationId = conversation.id;
   const summary = await analyzeMedicalReportWithGemini(file);
   const messageType = file.mimetype?.startsWith('image/')
     ? 'image_analysis'
     : 'report_summary';
 
   await storeChatMessage(conversationId, 'assistant', summary, messageType);
+  await touchConversation(conversationId);
 
   let summaryUpdated = false;
   let summaryUpdateError = null;

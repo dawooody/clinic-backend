@@ -29,6 +29,7 @@ const chat = async (req, res, next) => {
     const { conversationId, conversation_id, message } = req.body;
     const data = await service.prepareChatContext(message, {
       conversationId: conversationId || conversation_id,
+      userId: req.user.id,
     });
 
     return res.status(200).json({
@@ -65,9 +66,13 @@ const analyzeReport = async (req, res, next) => {
     const { conversationId, conversation_id } = req.body;
     const data = await service.analyzeMedicalReport(req.file, {
       conversationId: conversationId || conversation_id,
+      userId: req.user.id,
     });
 
-    return success(res, data, 'Report analyzed and stored in chat memory', 201);
+    return res.status(201).json({
+      success: true,
+      ...data,
+    });
   } catch (err) {
     if (err.status) {
       return error(res, err.message, err.status);
