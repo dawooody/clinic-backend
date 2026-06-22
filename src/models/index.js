@@ -12,6 +12,7 @@ const SymptomLog     = require('./SymptomLog');
 const FamilyLink     = require('./FamilyLink');
 const Notification   = require('./Notification');
 const Conversation   = require('./Conversation');
+const DoctorBreak    = require('./DoctorBreak');
 
 // ─── Associations ────────────────────────────────────────────────────────────
 
@@ -72,6 +73,9 @@ Notification.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 // User ↔ Conversation  (one-to-many)
 User.hasMany(Conversation, { foreignKey: 'user_id', as: 'conversations', onDelete: 'CASCADE' });
 Conversation.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+// Doctor ↔ DoctorBreak  (one-to-many)
+Doctor.hasMany(DoctorBreak, { foreignKey: 'doctor_id', as: 'breaks', onDelete: 'CASCADE' });
+DoctorBreak.belongsTo(Doctor, { foreignKey: 'doctor_id', as: 'doctor' });
 
 module.exports = {
   sequelize,
@@ -87,4 +91,5 @@ module.exports = {
   FamilyLink,
   Notification,
   Conversation,
+  DoctorBreak,
 };
