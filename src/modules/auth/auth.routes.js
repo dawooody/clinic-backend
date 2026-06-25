@@ -99,6 +99,7 @@ router.post('/reset-password', async (req, res, next) => {
 });
 
 // ─── Protected routes ────────────────────────────────────────────────────────
+router.post('/fcm-token',protect,ctrl.saveFcmToken);
 router.post('/logout', protect, ctrl.logout);
 router.get('/me',      protect, ctrl.getMe);
 

@@ -235,6 +235,26 @@ const refreshToken = async (token) => {
   return { accessToken: newAccessToken, refreshToken: newRefreshToken };
 };
 
+const saveFcmToken = async (userId, fcm_token) => {
+
+  const user = await User.findByPk(userId);
+
+  if (!user) {
+    throw {
+      status: 404,
+      message: 'User not found.'
+    };
+  }
+
+  await user.update({
+    fcm_token
+  });
+
+  return {
+    message: 'FCM token saved.'
+  };
+};
+
 /**
  * Logout — clear refresh token from DB
  */
@@ -242,4 +262,4 @@ const logout = async (userId) => {
   await User.update({ refresh_token: null }, { where: { id: userId } });
 };
 
-module.exports = { register, verifyEmail, resendVerificationCode, login, refreshToken, logout };
+module.exports = { register, verifyEmail, resendVerificationCode, login, refreshToken, saveFcmToken, logout };
