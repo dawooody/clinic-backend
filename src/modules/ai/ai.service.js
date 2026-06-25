@@ -32,6 +32,10 @@ const {
   Prescription, SymptomLog, FamilyLink, User,
 } = require('../../models');
 const { Op } = require('sequelize');
+const {
+  getRecordBuffer,
+  uploadRecord: storeMedicalRecord,
+} = require('../medical-records/records.supabase.service');
 
 const NO_RAG_MATCH_MESSAGE = 'I could not find a confident match in the medical knowledge base yet. Please add more symptoms, duration, severity, and any relevant medical history.';
 const RAG_CONTEXT_READY_MESSAGE = 'Medical response generated successfully.';
@@ -119,6 +123,12 @@ const analyzeMedicalReport = async (file, options = {}) => {
   });
   const conversationId = conversation.id;
   const summary = await analyzeMedicalReportWithGemini(file);
+  const record = await storeMedicalRecord(
+    options.userId,
+    options.metadata || {},
+    file,
+    { aiSummary: summary },
+  );
   const messageType = file.mimetype?.startsWith('image/')
     ? 'image_analysis'
     : 'report_summary';
@@ -140,6 +150,7 @@ const analyzeMedicalReport = async (file, options = {}) => {
     conversationId,
     message_type: messageType,
     summary,
+    record,
     summaryUpdated,
     summaryUpdateError,
   };
@@ -344,16 +355,8 @@ const summarizeRecord = async (recordId, userId) => {
     throw createHttpError(400, 'AI summarization only works on PDF records.');
   }
 
-  const fs = require('fs');
   const pdfParse = require('pdf-parse');
-  const path = require('path');
-
-  const filePath = path.join(__dirname, '../../../uploads', path.basename(record.file_url));
-  if (!fs.existsSync(filePath)) {
-    throw createHttpError(404, 'File not found on server.');
-  }
-
-  const buffer = fs.readFileSync(filePath);
+  const buffer = await getRecordBuffer(record);
   const pdfData = await pdfParse(buffer);
   const text = pdfData.text.substring(0, 3000);
 

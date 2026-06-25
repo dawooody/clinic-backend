@@ -1,0 +1,158 @@
+
+{
+	"info": {
+		"_postman_id": "e6f4f6f8-4a4e-4e6a-8b8a-9f9f9f9f9f9f",
+		"name": "Gemini Clinic API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Admin",
+			"item": [
+				{ "name": "Get Dashboard Stats", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/dashboard", "path": ["api", "admin", "dashboard"] } } },
+				{ "name": "Get Weekly Visits", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/charts/weekly-visits", "path": ["api", "admin", "charts", "weekly-visits"] } } },
+				{ "name": "Get Monthly Appointments", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/charts/monthly-appointments", "path": ["api", "admin", "charts", "monthly-appointments"] } } },
+				{ "name": "Get Next Appointments", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/appointments/next", "path": ["api", "admin", "appointments", "next"] } } },
+				{ "name": "Get All Appointments", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/appointments", "path": ["api", "admin", "appointments"] } } },
+				{ "name": "Update Appointment", "request": { "method": "PUT", "url": { "raw": "{{baseUrl}}/api/admin/appointments/:id", "path": ["api", "admin", "appointments", ":id"] } } },
+				{ "name": "Get All Doctors", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/doctors", "path": ["api", "admin", "doctors"] } } },
+				{ "name": "Create Doctor", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/admin/doctors", "path": ["api", "admin", "doctors"] } } },
+				{ "name": "Toggle Doctor Status", "request": { "method": "PATCH", "url": { "raw": "{{baseUrl}}/api/admin/doctors/:id/toggle", "path": ["api", "admin", "doctors", ":id", "toggle"] } } },
+				{ "name": "Get All Patients", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/patients", "path": ["api", "admin", "patients"] } } },
+				{ "name": "Get Patient By Id", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/patients/:id", "path": ["api", "admin", "patients", ":id"] } } },
+				{ "name": "Remove Doctor", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/admin/doctors/:id", "path": ["api", "admin", "doctors", ":id"] } } },
+				{ "name": "Remove All Doctors", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/admin/doctors", "path": ["api", "admin", "doctors"] } } },
+				{ "name": "Get Doctor Schedule", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/admin/doctors/:id/schedule", "path": ["api", "admin", "doctors", ":id", "schedule"] } } },
+				{ "name": "Set Doctor Schedule", "request": { "method": "PUT", "url": { "raw": "{{baseUrl}}/api/admin/doctors/:id/schedule", "path": ["api", "admin", "doctors", ":id", "schedule"] } } }
+			]
+		},
+		{
+			"name": "AI",
+			"item": [
+				{ "name": "Search", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/ai/search", "path": ["api", "ai", "search"] } } },
+				{ "name": "Voices", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/ai/voices", "path": ["api", "ai", "voices"] } } },
+				{ "name": "Create Conversation", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/ai/conversations", "path": ["api", "ai", "conversations"] } } },
+				{ "name": "Get Conversations", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/ai/conversations", "path": ["api", "ai", "conversations"] } } },
+				{ "name": "Get Conversation", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/ai/conversations/:conversationId", "path": ["api", "ai", "conversations", ":conversationId"] } } },
+				{ "name": "Rename Conversation", "request": { "method": "PATCH", "url": { "raw": "{{baseUrl}}/api/ai/conversations/:conversationId", "path": ["api", "ai", "conversations", ":conversationId"] } } },
+				{ "name": "Delete Conversation", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/ai/conversations/:conversationId", "path": ["api", "ai", "conversations", ":conversationId"] } } },
+				{ "name": "Chat", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/ai/chat", "path": ["api", "ai", "chat"] } } },
+				{ "name": "Voice Chat", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/ai/voice-chat", "path": ["api", "ai", "voice-chat"] } } },
+				{ "name": "Analyze Report", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/ai/analyze-report", "path": ["api", "ai", "analyze-report"] } } },
+				{ "name": "Pre-visit Summary", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/ai/pre-visit/:appointmentId", "path": ["api", "ai", "pre-visit", ":appointmentId"] } } },
+				{ "name": "Genetic Risks", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/ai/genetic-risks/:patientId", "path": ["api", "ai", "genetic-risks", ":patientId"] } } },
+				{ "name": "Summarize Record", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/ai/summarize/:recordId", "path": ["api", "ai", "summarize", ":recordId"] } } }
+			]
+		},
+        {
+			"name": "Appointments",
+			"item": [
+				{ "name": "Book", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/appointments", "path": ["api", "appointments"] } } },
+                { "name": "Rate", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/appointments/:id/rate", "path": ["api", "appointments", ":id", "rate"] } } },
+                { "name": "Get Today", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/appointments/today", "path": ["api", "appointments", "today"] } } },
+                { "name": "Confirm", "request": { "method": "PUT", "url": { "raw": "{{baseUrl}}/api/appointments/:id/confirm", "path": ["api", "appointments", ":id", "confirm"] } } },
+                { "name": "Complete", "request": { "method": "PUT", "url": { "raw": "{{baseUrl}}/api/appointments/:id/complete", "path": ["api", "appointments", ":id", "complete"] } } },
+                { "name": "Cancel", "request": { "method": "PUT", "url": { "raw": "{{baseUrl}}/api/appointments/:id/cancel", "path": ["api", "appointments", ":id", "cancel"] } } },
+                { "name": "Reschedule", "request": { "method": "PUT", "url": { "raw": "{{baseUrl}}/api/appointments/:id/reschedule", "path": ["api", "appointments", ":id", "reschedule"] } } },
+                { "name": "Remove", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/appointments/:id", "path": ["api", "appointments", ":id"] } } },
+                { "name": "Get My Appointments", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/appointments", "path": ["api", "appointments"] } } },
+                { "name": "Get By Id", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/appointments/:id", "path": ["api", "appointments", ":id"] } } }
+			]
+		},
+        {
+            "name": "Auth",
+            "item": [
+                { "name": "Register", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/auth/register", "path": ["api", "auth", "register"] } } },
+                { "name": "Verify Email", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/auth/verify-email", "path": ["api", "auth", "verify-email"] } } },
+                { "name": "Resend Verification Code", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/auth/resend-verification-code", "path": ["api", "auth", "resend-verification-code"] } } },
+                { "name": "Login", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/auth/login", "path": ["api", "auth", "login"] } } },
+                { "name": "Refresh Token", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/auth/refresh-token", "path": ["api", "auth", "refresh-token"] } } },
+                { "name": "Forgot Password", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/auth/forgot-password", "path": ["api", "auth", "forgot-password"] } } },
+                { "name": "Reset Password", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/auth/reset-password", "path": ["api", "auth", "reset-password"] } } },
+                { "name": "Logout", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/auth/logout", "path": ["api", "auth", "logout"] } } },
+                { "name": "Get Me", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/auth/me", "path": ["api", "auth", "me"] } } },
+                { "name": "Change Password", "request": { "method": "PUT", "url": { "raw": "{{baseUrl}}/api/auth/change-password", "path": ["api", "auth", "change-password"] } } }
+            ]
+        },
+        {
+            "name": "Doctors",
+            "item": [
+                { "name": "Get My Profile", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/doctors/me/profile", "path": ["api", "doctors", "me", "profile"] } } },
+                { "name": "Update Profile", "request": { "method": "PUT", "url": { "raw": "{{baseUrl}}/api/doctors/me/profile", "path": ["api", "doctors", "me", "profile"] } } },
+                { "name": "Get Weekly Stats", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/doctors/me/stats/weekly", "path": ["api", "doctors", "me", "stats", "weekly"] } } },
+                { "name": "Get Schedule", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/doctors/me/schedule", "path": ["api", "doctors", "me", "schedule"] } } },
+                { "name": "Set Schedule", "request": { "method": "PUT", "url": { "raw": "{{baseUrl}}/api/doctors/me/schedule", "path": ["api", "doctors", "me", "schedule"] } } },
+                { "name": "Patch Schedule Day", "request": { "method": "PATCH", "url": { "raw": "{{baseUrl}}/api/doctors/me/schedule/:day", "path": ["api", "doctors", "me", "schedule", ":day"] } } },
+                { "name": "Get Breaks", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/doctors/me/breaks", "path": ["api", "doctors", "me", "breaks"] } } },
+                { "name": "Create Break", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/doctors/me/breaks", "path": ["api", "doctors", "me", "breaks"] } } },
+                { "name": "Delete Break", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/doctors/me/breaks/:id", "path": ["api", "doctors", "me", "breaks", ":id"] } } },
+                { "name": "Get All Doctors", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/doctors", "path": ["api", "doctors"] } } },
+                { "name": "Get Doctor By Id", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/doctors/:id", "path": ["api", "doctors", ":id"] } } },
+                { "name": "Get Available Slots", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/doctors/:id/slots", "path": ["api", "doctors", ":id", "slots"] } } }
+            ]
+        },
+        {
+            "name": "Family Links",
+            "item": [
+                { "name": "Request Link", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/family-links", "path": ["api", "family-links"] } } },
+                { "name": "Get My Family", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/family-links", "path": ["api", "family-links"] } } },
+                { "name": "Get Pending", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/family-links/pending", "path": ["api", "family-links", "pending"] } } },
+                { "name": "Accept Link", "request": { "method": "PUT", "url": { "raw": "{{baseUrl}}/api/family-links/:id/accept", "path": ["api", "family-links", ":id", "accept"] } } },
+                { "name": "Reject Link", "request": { "method": "PUT", "url": { "raw": "{{baseUrl}}/api/family-links/:id/reject", "path": ["api", "family-links", ":id", "reject"] } } }
+            ]
+        },
+        {
+            "name": "Medical Records",
+            "item": [
+                { "name": "Upload", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/medical-records", "path": ["api", "medical-records"] } } },
+                { "name": "Get My Records", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/medical-records", "path": ["api", "medical-records"] } } },
+                { "name": "Get Record", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/medical-records/:id", "path": ["api", "medical-records", ":id"] } } },
+                { "name": "Delete Record", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/medical-records/:id", "path": ["api", "medical-records", ":id"] } } }
+            ]
+        },
+        {
+            "name": "Notifications",
+            "item": [
+                { "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/notifications", "path": ["api", "notifications"] } } },
+                { "name": "Get Unread Count", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/notifications/unread-count", "path": ["api", "notifications", "unread-count"] } } },
+                { "name": "Read All", "request": { "method": "PUT", "url": { "raw": "{{baseUrl}}/api/notifications/read-all", "path": ["api", "notifications", "read-all"] } } },
+                { "name": "Read", "request": { "method": "PUT", "url": { "raw": "{{baseUrl}}/api/notifications/:id/read", "path": ["api", "notifications", ":id", "read"] } } },
+                { "name": "Delete", "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/notifications/:id", "path": ["api", "notifications", ":id"] } } }
+            ]
+        },
+        {
+            "name": "Patients",
+            "item": [
+                { "name": "Get Profile", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/patients/profile", "path": ["api", "patients", "profile"] } } },
+                { "name": "Update Profile", "request": { "method": "PUT", "url": { "raw": "{{baseUrl}}/api/patients/profile", "path": ["api", "patients", "profile"] } } },
+                { "name": "Get Doctor Patients", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/patients/doctor/my-patients", "path": ["api", "patients", "doctor", "my-patients"] } } },
+                { "name": "Get Patient By Id", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/patients/:id", "path": ["api", "patients", ":id"] } } }
+            ]
+        },
+        {
+            "name": "Prescriptions",
+            "item": [
+                { "name": "Create", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/prescriptions", "path": ["api", "prescriptions"] } } },
+                { "name": "Get Patient Prescriptions", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/prescriptions/patient/:patientId", "path": ["api", "prescriptions", "patient", ":patientId"] } } },
+                { "name": "Get My Prescriptions", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/prescriptions", "path": ["api", "prescriptions"] } } },
+                { "name": "Get By Id", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/prescriptions/:id", "path": ["api", "prescriptions", ":id"] } } }
+            ]
+        },
+        {
+            "name": "Specialties",
+            "item": [
+                { "name": "Get All", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/specialties", "path": ["api", "specialties"] } } },
+                { "name": "Get By Id", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/specialties/:id", "path": ["api", "specialties", ":id"] } } }
+            ]
+        },
+        {
+            "name": "Symptom Tracker",
+            "item": [
+                { "name": "Add Log", "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/symptom-tracker", "path": ["api", "symptom-tracker"] } } },
+                { "name": "Get My Logs", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/symptom-tracker", "path": ["api", "symptom-tracker"] } } },
+                { "name": "Update Log", "request": { "method": "PUT", "url": { "raw": "{{baseUrl}}/api/symptom-tracker/:id", "path": ["api", "symptom-tracker", ":id"] } } },
+                { "name": "Get Patient Logs", "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/symptom-tracker/patient/:patientId", "path": ["api", "symptom-tracker", "patient", ":patientId"] } } }
+            ]
+        }
+	]
+}

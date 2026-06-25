@@ -1,5 +1,5 @@
-const service = require('./records.service');
-const { success, error, paginated } = require('../../utils/response');
+const service = require('./records.supabase.service');
+const { success, error } = require('../../utils/response');
 
 const upload = async (req, res, next) => {
   try {
@@ -13,19 +13,18 @@ const upload = async (req, res, next) => {
 
 const getMyRecords = async (req, res, next) => {
   try {
-    const { record_type, page, limit } = req.query;
-    const { rows, count } = await service.getMyRecords(req.user.id, { record_type, page, limit });
-    return paginated(res, rows, count, page || 1, limit || 10);
+    const records = await service.getMyRecords(req.user.id, req.query);
+    return res.status(200).json(records);
   } catch (err) {
     if (err.status) return error(res, err.message, err.status);
     next(err);
   }
 };
 
-const getPatientRecords = async (req, res, next) => {
+const getRecord = async (req, res, next) => {
   try {
-    const { rows, count } = await service.getPatientRecords(req.user.id, req.params.patientId, req.query);
-    return paginated(res, rows, count, req.query.page || 1, req.query.limit || 10);
+    const record = await service.getRecord(req.user.id, req.params.id);
+    return res.status(200).json(record);
   } catch (err) {
     if (err.status) return error(res, err.message, err.status);
     next(err);
@@ -35,11 +34,11 @@ const getPatientRecords = async (req, res, next) => {
 const deleteRecord = async (req, res, next) => {
   try {
     await service.deleteRecord(req.user.id, req.params.id);
-    return success(res, {}, 'Record deleted');
+    return res.status(200).json({ success: true });
   } catch (err) {
     if (err.status) return error(res, err.message, err.status);
     next(err);
   }
 };
 
-module.exports = { upload, getMyRecords, getPatientRecords, deleteRecord };
+module.exports = { upload, getMyRecords, getRecord, deleteRecord };

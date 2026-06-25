@@ -67,6 +67,7 @@ const analyzeReport = async (req, res, next) => {
     const data = await service.analyzeMedicalReport(req.file, {
       conversationId: conversationId || conversation_id,
       userId: req.user.id,
+      metadata: req.body,
     });
 
     return res.status(201).json({
