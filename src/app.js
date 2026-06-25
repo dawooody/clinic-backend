@@ -37,6 +37,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('dev'));
 
+// Serve generated voice replies explicitly, then the rest of uploaded files.
+app.use('/uploads/audio', express.static(path.join(__dirname, '../uploads/audio')));
+
 // Serve uploaded files (lab reports, profile photos, etc.)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 

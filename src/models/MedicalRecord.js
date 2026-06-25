@@ -20,6 +20,10 @@ const MedicalRecord = sequelize.define('MedicalRecord', {
     type: DataTypes.STRING(500),
     allowNull: false,
   },
+  storage_path: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
   file_type: {
     type: DataTypes.ENUM('pdf', 'image'),
     allowNull: false,

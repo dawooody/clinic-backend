@@ -1,5 +1,4 @@
 const { analyzeMedicalReport: analyzeMedicalReportWithGemini, askGemini } = require('../../config/gemini');
-const { v4: uuidv4 } = require('uuid');
 const { askGroq } = require('./llm.helpers');
 const {
   buildChatContext,
@@ -27,11 +26,16 @@ const {
   retrieveSimilarDiseases,
   searchDocuments,
 } = require('./retrieval.service');
+const { resolveConversationForUser, touchConversation } = require('./conversation.service');
 const {
   Patient, Doctor, Appointment, MedicalRecord,
   Prescription, SymptomLog, FamilyLink, User,
 } = require('../../models');
 const { Op } = require('sequelize');
+const {
+  getRecordBuffer,
+  uploadRecord: storeMedicalRecord,
+} = require('../medical-records/records.supabase.service');
 
 const NO_RAG_MATCH_MESSAGE = 'I could not find a confident match in the medical knowledge base yet. Please add more symptoms, duration, severity, and any relevant medical history.';
 const RAG_CONTEXT_READY_MESSAGE = 'Medical response generated successfully.';
@@ -50,7 +54,12 @@ const prepareChatContext = async (message, options = {}) => {
     throw createHttpError(400, 'Message is required.');
   }
 
-  const conversationId = options.conversationId?.trim() || uuidv4();
+  const conversation = await resolveConversationForUser({
+    conversationId: options.conversationId,
+    userId: options.userId,
+    title: options.title,
+  });
+  const conversationId = conversation.id;
   const recentMessageLimit = options.recentMessageLimit || DEFAULT_RECENT_MESSAGE_LIMIT;
   const [summary, recentMessages, retrieval] = await Promise.all([
     getConversationSummary(conversationId),
@@ -72,6 +81,7 @@ const prepareChatContext = async (message, options = {}) => {
     { role: 'user', message: retrieval.originalMessage },
     { role: 'assistant', message: reply },
   ]);
+  await touchConversation(conversationId);
 
   const messageCount = await getConversationMessageCount(conversationId);
   let summaryUpdated = false;
@@ -106,13 +116,25 @@ const prepareChatContext = async (message, options = {}) => {
 };
 
 const analyzeMedicalReport = async (file, options = {}) => {
-  const conversationId = options.conversationId?.trim() || uuidv4();
+  const conversation = await resolveConversationForUser({
+    conversationId: options.conversationId,
+    userId: options.userId,
+    title: options.title,
+  });
+  const conversationId = conversation.id;
   const summary = await analyzeMedicalReportWithGemini(file);
+  const record = await storeMedicalRecord(
+    options.userId,
+    options.metadata || {},
+    file,
+    { aiSummary: summary },
+  );
   const messageType = file.mimetype?.startsWith('image/')
     ? 'image_analysis'
     : 'report_summary';
 
   await storeChatMessage(conversationId, 'assistant', summary, messageType);
+  await touchConversation(conversationId);
 
   let summaryUpdated = false;
   let summaryUpdateError = null;
@@ -128,6 +150,7 @@ const analyzeMedicalReport = async (file, options = {}) => {
     conversationId,
     message_type: messageType,
     summary,
+    record,
     summaryUpdated,
     summaryUpdateError,
   };
@@ -332,16 +355,8 @@ const summarizeRecord = async (recordId, userId) => {
     throw createHttpError(400, 'AI summarization only works on PDF records.');
   }
 
-  const fs = require('fs');
   const pdfParse = require('pdf-parse');
-  const path = require('path');
-
-  const filePath = path.join(__dirname, '../../../uploads', path.basename(record.file_url));
-  if (!fs.existsSync(filePath)) {
-    throw createHttpError(404, 'File not found on server.');
-  }
-
-  const buffer = fs.readFileSync(filePath);
+  const buffer = await getRecordBuffer(record);
   const pdfData = await pdfParse(buffer);
   const text = pdfData.text.substring(0, 3000);
 

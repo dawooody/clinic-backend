@@ -175,7 +175,38 @@ const getConversationMessageCount = async (conversationId) => {
   return count || 0;
 };
 
+const conversationHasStoredContext = async (conversationId) => {
+  if (!conversationId) {
+    return false;
+  }
+
+  const client = getSupabaseClient();
+  const [chatResult, summaryResult] = await Promise.all([
+    client
+      .from('chats')
+      .select('id', { head: true, count: 'exact' })
+      .eq('conversation_id', conversationId)
+      .limit(1),
+    client
+      .from('chat_summaries')
+      .select('conversation_id', { head: true, count: 'exact' })
+      .eq('conversation_id', conversationId)
+      .limit(1),
+  ]);
+
+  if (chatResult.error) {
+    throw createHttpError(500, `Failed to inspect stored chat messages: ${chatResult.error.message}`);
+  }
+
+  if (summaryResult.error) {
+    throw createHttpError(500, `Failed to inspect stored conversation summary: ${summaryResult.error.message}`);
+  }
+
+  return (chatResult.count || 0) > 0 || (summaryResult.count || 0) > 0;
+};
+
 module.exports = {
+  conversationHasStoredContext,
   DEFAULT_RECENT_MESSAGE_LIMIT,
   getConversationMessageCount,
   getConversationSummary,

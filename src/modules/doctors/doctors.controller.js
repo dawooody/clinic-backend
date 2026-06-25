@@ -41,6 +41,16 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
+const getSchedule = async (req, res, next) => {
+  try {
+    const data = await service.getSchedule(req.user.id);
+    return success(res, data);
+  } catch (err) {
+    if (err.status) return error(res, err.message, err.status);
+    next(err);
+  }
+};
+
 const setSchedule = async (req, res, next) => {
   try {
     const { schedules } = req.body;
@@ -49,6 +59,20 @@ const setSchedule = async (req, res, next) => {
     }
     const data = await service.setSchedule(req.user.id, schedules);
     return success(res, data, 'Schedule updated');
+  } catch (err) {
+    if (err.status) return error(res, err.message, err.status);
+    next(err);
+  }
+};
+
+const patchScheduleDay = async (req, res, next) => {
+  try {
+    const dayOfWeek = parseInt(req.params.day, 10);
+    if (Number.isNaN(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
+      return error(res, 'day must be an integer between 0 (Sun) and 6 (Sat).', 400);
+    }
+    const data = await service.patchScheduleDay(req.user.id, dayOfWeek, req.body);
+    return success(res, data, 'Schedule day updated');
   } catch (err) {
     if (err.status) return error(res, err.message, err.status);
     next(err);
@@ -67,4 +91,58 @@ const getAvailableSlots = async (req, res, next) => {
   }
 };
 
-module.exports = { getAllDoctors, getDoctorById, getMyProfile, updateProfile, setSchedule, getAvailableSlots };
+const getBreaks = async (req, res, next) => {
+  try {
+    const data = await service.getBreaks(req.user.id);
+    return success(res, data);
+  } catch (err) {
+    if (err.status) return error(res, err.message, err.status);
+    next(err);
+  }
+};
+
+const createBreak = async (req, res, next) => {
+  try {
+    const { title, start_date, end_date } = req.body;
+    const data = await service.createBreak(req.user.id, { title, start_date, end_date });
+    return success(res, data, 'Break added', 201);
+  } catch (err) {
+    if (err.status) return error(res, err.message, err.status);
+    next(err);
+  }
+};
+
+const deleteBreak = async (req, res, next) => {
+  try {
+    const data = await service.deleteBreak(req.user.id, req.params.id);
+    return success(res, data, 'Break deleted');
+  } catch (err) {
+    if (err.status) return error(res, err.message, err.status);
+    next(err);
+  }
+};
+
+const getWeeklyStats = async (req, res, next) => {
+  try {
+    const data = await service.getWeeklyStats(req.user.id);
+    return success(res, data);
+  } catch (err) {
+    if (err.status) return error(res, err.message, err.status);
+    next(err);
+  }
+};
+
+module.exports = {
+  getAllDoctors,
+  getDoctorById,
+  getMyProfile,
+  updateProfile,
+  getSchedule,
+  setSchedule,
+  patchScheduleDay,
+  getAvailableSlots,
+  getBreaks,
+  createBreak,
+  deleteBreak,
+  getWeeklyStats,
+};
