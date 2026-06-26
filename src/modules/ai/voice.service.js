@@ -1,42 +1,106 @@
 const { prepareChatContext } = require('./ai.service');
 const { transcribeAudio } = require('./stt.helper');
 const { generateSpeech } = require('./tts.helper');
-const { createHttpError } = require('./voice.helpers');
+const { createHttpError, buildUserVoiceStoragePath } = require('./voice.helpers');
+const {
+  deleteStorageFile,
+  uploadStorageFile,
+  VOICE_FILES_BUCKET,
+} = require('../medical-records/supabase.storage');
+const {
+  buildAudioAttachment,
+} = require('./chat.persistence.helpers');
+const { updateChatMessage } = require('./memory.repository');
+const { resolveConversationForUser } = require('./conversation.service');
 
 const ELEVENLABS_API_BASE_URL = 'https://api.elevenlabs.io/v1';
 
 const voiceChat = async (file, options = {}) => {
   const { transcript } = await transcribeAudio(file);
 
+  const conversation = await resolveConversationForUser({
+    conversationId: options.conversationId,
+    userId: options.userId,
+  });
+  const conversationId = conversation.id;
+
   // The existing chat service remains the single source of truth. Passing the
   // transcript through prepareChatContext preserves RAG retrieval, recent
   // messages, report summaries, multilingual behavior, storage, and summary
   // updates exactly like POST /api/ai/chat.
-  const chatData = await prepareChatContext(transcript, {
-    conversationId: options.conversationId,
-    userId: options.userId,
+  const userVoiceStoragePath = buildUserVoiceStoragePath(options.userId, conversationId, file);
+  const userVoiceUpload = await uploadStorageFile({
+    bucketName: VOICE_FILES_BUCKET,
+    storagePath: userVoiceStoragePath,
+    buffer: file.buffer,
+    contentType: file.mimetype,
   });
 
-  let audioUrl = null;
+  const userVoiceAttachment = buildAudioAttachment({
+    url: userVoiceUpload.fileUrl,
+    storagePath: userVoiceUpload.storagePath,
+    mimeType: file.mimetype,
+  });
+
+  let chatData;
+
+  try {
+    chatData = await prepareChatContext(transcript, {
+      conversationId,
+      userId: options.userId,
+      userMessage: {
+        attachments: [userVoiceAttachment],
+        metadata: {
+          transcript,
+        },
+      },
+    });
+  } catch (error) {
+    await deleteStorageFile({
+      bucketName: VOICE_FILES_BUCKET,
+      storagePath: userVoiceUpload.storagePath,
+    }).catch(() => {});
+
+    throw error;
+  }
+
+  let replyAudioUrl = null;
 
   try {
     const speech = await generateSpeech(chatData.reply, {
-      requestOrigin: options.requestOrigin,
+      userId: options.userId,
+      conversationId,
     });
-    audioUrl = speech.audioUrl;
+
+    replyAudioUrl = speech.audioUrl;
+
+    if (chatData?.storedMessages?.[1]?.id) {
+      await updateChatMessage(chatData.storedMessages[1].id, {
+        attachments: [buildAudioAttachment({
+          url: speech.audioUrl,
+          storagePath: speech.storagePath,
+          mimeType: 'audio/mpeg',
+          provider: 'ElevenLabs',
+        })],
+        metadata: {
+          provider: 'ElevenLabs',
+        },
+      });
+    }
   } catch (error) {
-    // TTS is intentionally non-blocking for voice chat. If ElevenLabs or the
-    // temporary MP3 write fails, users still receive the transcript and Qwen
-    // reply produced by the existing RAG and memory-backed chat service.
-    console.error('Voice chat TTS failed:', error.message);
+    if (error.status) {
+      console.error('Voice chat TTS failed:', error.message);
+    } else {
+      console.error('Voice chat TTS failed:', error.message);
+    }
   }
 
   return {
     success: true,
-    conversationId: chatData.conversationId,
+    conversationId,
     transcript,
     reply: chatData.reply,
-    audioUrl,
+    audioUrl: replyAudioUrl,
   };
 };
 

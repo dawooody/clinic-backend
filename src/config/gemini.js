@@ -1,16 +1,16 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenAI } = require('@google/genai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Use gemini-1.5-flash for fast responses (best for mobile)
 const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-const reportAnalysisModel = genAI.getGenerativeModel({
-  model: 'gemini-2.5-flash',
-  generationConfig: {
-    temperature: 0.2,
-    maxOutputTokens: 1024, // ✅ Increased from 400 to prevent mid-sentence cutoff
-  },
-});
+let reportAnalysisModels;
+const REPORT_ANALYSIS_MODEL_NAME = 'gemini-2.5-flash';
+const REPORT_ANALYSIS_MAX_OUTPUT_TOKENS = 1024;
+const reportAnalysisModel = {
+  generateContent: (...args) => getReportAnalysisModel().generateContent(...args),
+};
 
 const SUPPORTED_REPORT_MIME_TYPES = new Set([
   'application/pdf',
@@ -37,6 +37,58 @@ const askGemini = async (prompt) => {
   return result.response.text();
 };
 
+const getReportAnalysisModel = () => {
+  if (!reportAnalysisModels) {
+    reportAnalysisModels = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }).models;
+  }
+
+  return reportAnalysisModels;
+};
+
+const buildReportAnalysisPrompt = () => [
+  'Analyze this medical report carefully.',
+  'Return plain text only. Do not use markdown, bullets, or JSON.',
+  'Use exactly these section labels, in this order, each on its own line:',
+  'Overall summary:',
+  'Abnormal findings:',
+  'Normal findings:',
+  'Recommendations:',
+  'Write concise complete sentences under each heading.',
+  'If a section has no findings, write "None reported."',
+  'Do not include any other headings.',
+  'Do not provide a diagnosis.',
+].join('\n');
+
+const logReportAnalysisUsage = (response) => {
+  const candidate = response?.candidates?.[0];
+  const usage = response?.usageMetadata || {};
+  const finishReason = candidate?.finishReason || 'UNKNOWN';
+  const promptTokenCount = usage.promptTokenCount ?? null;
+  const candidatesTokenCount = usage.candidatesTokenCount ?? usage.responseTokenCount ?? null;
+  const thoughtsTokenCount = usage.thoughtsTokenCount ?? null;
+  const totalTokenCount = usage.totalTokenCount ?? null;
+
+  console.log('Gemini report analysis metadata:', JSON.stringify({
+    finishReason,
+    promptTokenCount,
+    candidatesTokenCount,
+    thoughtsTokenCount,
+    totalTokenCount,
+  }, null, 2));
+
+  if (finishReason === 'MAX_TOKENS') {
+    const outputTokens = candidatesTokenCount ?? 0;
+    const thoughtTokens = thoughtsTokenCount ?? 0;
+    const cause = thoughtTokens > outputTokens
+      ? 'excessive thinking tokens likely consumed the budget before the answer was finished.'
+      : 'output tokens likely ran out before the answer was finished.';
+
+    console.warn(
+      `Gemini report analysis was truncated with finishReason=MAX_TOKENS; ${cause}`,
+    );
+  }
+};
+
 const analyzeMedicalReport = async (file) => {
   if (!process.env.GEMINI_API_KEY) {
     throw createHttpError(500, 'Gemini API key is missing.');
@@ -53,67 +105,42 @@ const analyzeMedicalReport = async (file) => {
     );
   }
 
-  const prompt = `
-Analyze this medical report carefully.
-
-Return a complete concise medical summary in plain text.
-
-Requirements:
-- Write 3-5 complete sentences.
-- Mention important abnormal findings clearly.
-- Mention if there are no critical abnormalities.
-- Keep the response memory-friendly for future chatbot conversations.
-- Do not use markdown.
-- Do not use bullet points.
-- Do not return JSON.
-- Do not provide diagnosis.
-- Do not return incomplete sentences.
-`;
+  const prompt = buildReportAnalysisPrompt();
 
   try {
-    const result = await reportAnalysisModel.generateContent({
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: prompt },
-            {
-              inlineData: {
-                mimeType: file.mimetype,
-                data: file.buffer.toString('base64'),
-              },
+    const response = await getReportAnalysisModel().generateContent({
+      model: REPORT_ANALYSIS_MODEL_NAME,
+      contents: [{
+        role: 'user',
+        parts: [
+          { text: prompt },
+          {
+            inlineData: {
+              mimeType: file.mimetype,
+              data: file.buffer.toString('base64'),
             },
-          ],
+          },
+        ],
+      }],
+      config: {
+        temperature: 0.2,
+        maxOutputTokens: REPORT_ANALYSIS_MAX_OUTPUT_TOKENS,
+        thinkingConfig: {
+          thinkingBudget: 0,
+          includeThoughts: false,
         },
-      ],
-      // ✅ Removed duplicate generationConfig — already set on the model above
+        responseMimeType: 'text/plain',
+      },
     });
 
-    // ✅ Check why the model stopped — "STOP" is good, "MAX_TOKENS" means it was cut
-    const candidate = result.response.candidates?.[0];
-    const finishReason = candidate?.finishReason;
-    console.log('FINISH REASON:', finishReason);
+    logReportAnalysisUsage(response);
 
-    if (finishReason === 'MAX_TOKENS') {
-      console.warn('Warning: Output was truncated due to token limit.');
-    }
-
-    const summary = result.response.text().trim();
-    console.log('FULL SUMMARY:', summary);
-    console.log('SUMMARY LENGTH:', summary.length);
-
-    // ✅ Optional safety net: warn if response looks incomplete
-    const endsCleanly = /[.!?]$/.test(summary);
-    if (!endsCleanly) {
-      console.warn('Summary may be incomplete — does not end with punctuation.');
-    }
-
+    const summary = (response.text || '').trim();
     if (!summary) {
       throw new Error('Gemini returned an empty report summary.');
     }
 
     return summary;
-
   } catch (error) {
     console.error('Gemini Report Error:', error);
     if (error.status) throw error;

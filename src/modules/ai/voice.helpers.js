@@ -1,4 +1,5 @@
 const path = require('path');
+const { v4: uuidv4 } = require('uuid');
 
 const MAX_AUDIO_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
@@ -44,23 +45,51 @@ const getAudioMimeType = (file) => {
   return AUDIO_MIME_BY_EXTENSION[getAudioExtension(file)] || 'application/octet-stream';
 };
 
-const getAudioFilename = (file) => {
-  const originalName = file?.originalname?.trim();
+const getAudioStorageExtension = (file) => {
   const extension = getAudioExtension(file);
 
-  if (originalName && SUPPORTED_AUDIO_EXTENSIONS.has(extension)) {
-    return originalName;
+  if (SUPPORTED_AUDIO_EXTENSIONS.has(extension)) {
+    return extension;
   }
 
   const fallbackExtension = Object.keys(AUDIO_MIME_BY_EXTENSION).find(
     (key) => AUDIO_MIME_BY_EXTENSION[key] === getAudioMimeType(file),
   );
 
-  if (originalName) {
-    return `${originalName}${fallbackExtension || '.webm'}`;
+  return fallbackExtension || '.webm';
+};
+
+const getAudioFilename = (file) => {
+  const originalName = file?.originalname?.trim();
+  const extension = getAudioStorageExtension(file);
+
+  if (originalName && SUPPORTED_AUDIO_EXTENSIONS.has(extension)) {
+    return originalName;
   }
 
-  return `voice-message${fallbackExtension || '.webm'}`;
+  if (originalName) {
+    return `${originalName}${extension}`;
+  }
+
+  return `voice-message${extension}`;
+};
+
+const sanitizeStorageSegment = (value, fallback = 'unknown') => {
+  const safeValue = String(value ?? fallback)
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  return safeValue || fallback;
+};
+
+const buildUserVoiceStoragePath = (userId, conversationId, file) => {
+  return `voice/user/${sanitizeStorageSegment(userId, 'user')}/${sanitizeStorageSegment(conversationId, 'conversation')}/${uuidv4()}${getAudioStorageExtension(file)}`;
+};
+
+const buildAssistantVoiceStoragePath = (userId, conversationId) => {
+  return `voice/assistant/${sanitizeStorageSegment(userId, 'user')}/${sanitizeStorageSegment(conversationId, 'conversation')}/${uuidv4()}.mp3`;
 };
 
 const validateAudioFile = (file) => {
@@ -89,6 +118,9 @@ module.exports = {
   createHttpError,
   getAudioFilename,
   getAudioMimeType,
+  getAudioStorageExtension,
+  buildAssistantVoiceStoragePath,
+  buildUserVoiceStoragePath,
   isSupportedAudioFile,
   validateAudioFile,
 };

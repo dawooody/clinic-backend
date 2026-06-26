@@ -10,9 +10,15 @@ const {
   getConversationMessageCount,
   getConversationSummary,
   getRecentMessages,
-  storeChatMessage,
   storeChatMessages,
 } = require('./memory.repository');
+const {
+  buildDocumentAttachment,
+  buildImageAttachment,
+  deriveStoragePathFromPublicUrl,
+  normalizeChatAttachments,
+  normalizeChatMetadata,
+} = require('./chat.persistence.helpers');
 const {
   SUMMARY_UPDATE_INTERVAL,
   updateConversationSummary,
@@ -77,9 +83,19 @@ const prepareChatContext = async (message, options = {}) => {
   );
   const hasResults = retrieval.results.length > 0;
   const reply = await askGroq(prompt);
-  await storeChatMessages(conversationId, [
-    { role: 'user', message: retrieval.originalMessage },
-    { role: 'assistant', message: reply },
+  const storedMessages = await storeChatMessages(conversationId, [
+    {
+      role: 'user',
+      message: retrieval.originalMessage,
+      attachments: normalizeChatAttachments(options.userMessage?.attachments),
+      metadata: normalizeChatMetadata(options.userMessage?.metadata),
+    },
+    {
+      role: 'assistant',
+      message: reply,
+      attachments: normalizeChatAttachments(options.assistantMessage?.attachments),
+      metadata: normalizeChatMetadata(options.assistantMessage?.metadata),
+    },
   ]);
   await touchConversation(conversationId);
 
@@ -112,6 +128,7 @@ const prepareChatContext = async (message, options = {}) => {
     similarityThreshold: retrieval.similarityThreshold,
     summaryUpdated,
     summaryUpdateError,
+    storedMessages,
   };
 };
 
@@ -132,8 +149,39 @@ const analyzeMedicalReport = async (file, options = {}) => {
   const messageType = file.mimetype?.startsWith('image/')
     ? 'image_analysis'
     : 'report_summary';
+  const attachment = file.mimetype?.startsWith('image/')
+    ? buildImageAttachment({
+        url: record.fileUrl,
+        storagePath: deriveStoragePathFromPublicUrl(record.fileUrl),
+        title: record.title,
+        mimeType: file.mimetype,
+      })
+    : buildDocumentAttachment({
+        url: record.fileUrl,
+        storagePath: deriveStoragePathFromPublicUrl(record.fileUrl),
+        title: record.title,
+        medicalRecordId: record.id,
+        mimeType: file.mimetype,
+      });
 
-  await storeChatMessage(conversationId, 'assistant', summary, messageType);
+  await storeChatMessages(conversationId, [
+    {
+      role: 'user',
+      message: record.title,
+      attachments: [attachment],
+      metadata: {
+        recordType: record.recordType,
+      },
+    },
+    {
+      role: 'assistant',
+      message: summary,
+      messageType,
+      metadata: {
+        recordType: record.recordType,
+      },
+    },
+  ]);
   await touchConversation(conversationId);
 
   let summaryUpdated = false;

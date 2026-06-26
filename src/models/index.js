@@ -12,6 +12,7 @@ const SymptomLog     = require('./SymptomLog');
 const FamilyLink     = require('./FamilyLink');
 const Notification   = require('./Notification');
 const Conversation   = require('./Conversation');
+const Chat           = require('./Chat');
 const DoctorBreak    = require('./DoctorBreak');
 
 // ─── Associations ────────────────────────────────────────────────────────────
@@ -91,5 +92,6 @@ module.exports = {
   FamilyLink,
   Notification,
   Conversation,
+  Chat,
   DoctorBreak,
 };

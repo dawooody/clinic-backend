@@ -1,3 +1,5 @@
+const { summarizeAttachments } = require('./chat.persistence.helpers');
+
 const formatMemoryRole = (role, messageType) => {
   if (messageType === 'report_summary') {
     return 'Medical Report Summary';
@@ -16,7 +18,12 @@ const formatRecentMessages = (recentMessages = []) => {
   }
 
   return recentMessages
-    .map(({ role, message, message_type }) => `${formatMemoryRole(role, message_type)}: ${message}`)
+    .map(({ role, message, message_type, attachments }) => {
+      const cleanMessage = message?.trim();
+      const attachmentSummary = summarizeAttachments(attachments);
+      const renderedMessage = cleanMessage || attachmentSummary || 'Attachment';
+      return `${formatMemoryRole(role, message_type)}: ${renderedMessage}`;
+    })
     .join('\n');
 };
 
