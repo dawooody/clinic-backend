@@ -96,8 +96,7 @@ const verifyEmail = async (email, code) => {
   }
 
   if (
-    user.verification_code !== code ||
-    new Date() > user.verification_code_expiry
+    user.verification_code !== code 
   ) {
     throw {
       status: 400,
