@@ -38,6 +38,11 @@ const User = sequelize.define('User', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+
+  fcm_token: {
+  type: DataTypes.TEXT,
+  allowNull: true,
+  },
   is_active: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,

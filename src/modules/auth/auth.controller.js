@@ -91,7 +91,33 @@ const refreshToken = async (req, res, next) => {
     next(err);
   }
 };
+const saveFcmToken = async (req, res, next) => {
+  try {
 
+    const result = await authService.saveFcmToken(
+      req.user.id,
+      req.body.fcm_token
+    );
+
+    return success(
+      res,
+      result,
+      'FCM token saved.'
+    );
+
+  } catch (err) {
+
+    if (err.status) {
+      return error(
+        res,
+        err.message,
+        err.status
+      );
+    }
+
+    next(err);
+  }
+};
 const logout = async (req, res, next) => {
   try {
     await authService.logout(req.user.id);
@@ -105,4 +131,4 @@ const getMe = async (req, res) => {
   return success(res, { user: req.user }, 'Current user');
 };
 
-module.exports = { register, verifyEmail, resendVerificationCode, login, refreshToken, logout, getMe };
+module.exports = { register, verifyEmail, resendVerificationCode, login, refreshToken, saveFcmToken, logout, getMe };
