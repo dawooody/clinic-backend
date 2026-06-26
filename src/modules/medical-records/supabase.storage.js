@@ -1,6 +1,7 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const MEDICAL_FILES_BUCKET = 'Clinic-App';
+const VOICE_FILES_BUCKET = process.env.SUPABASE_VOICE_BUCKET || 'medical-files';
 let supabaseClient;
 
 const createHttpError = (status, message) => {
@@ -25,27 +26,36 @@ const getSupabaseClient = () => {
   return supabaseClient;
 };
 
-const getMedicalFileUrl = (storagePath) => {
+const getStorageFileUrl = (bucketName, storagePath) => {
   const client = getSupabaseClient();
-  const { data } = client.storage.from(MEDICAL_FILES_BUCKET).getPublicUrl(storagePath);
+  const { data } = client.storage.from(bucketName).getPublicUrl(storagePath);
   return data.publicUrl;
 };
 
-const uploadMedicalFile = async ({ storagePath, buffer, contentType }) => {
+const uploadStorageFile = async ({ bucketName, storagePath, buffer, contentType }) => {
   const client = getSupabaseClient();
-  const { error } = await client.storage.from(MEDICAL_FILES_BUCKET).upload(storagePath, buffer, {
+  const { error } = await client.storage.from(bucketName).upload(storagePath, buffer, {
     contentType,
     upsert: false,
   });
 
   if (error) {
-    throw createHttpError(500, `Failed to upload medical file: ${error.message}`);
+    throw createHttpError(500, `Failed to upload file to ${bucketName}: ${error.message}`);
   }
 
   return {
-    fileUrl: getMedicalFileUrl(storagePath),
+    fileUrl: getStorageFileUrl(bucketName, storagePath),
     storagePath,
   };
+};
+
+const uploadMedicalFile = async ({ storagePath, buffer, contentType }) => {
+  return uploadStorageFile({
+    bucketName: MEDICAL_FILES_BUCKET,
+    storagePath,
+    buffer,
+    contentType,
+  });
 };
 
 const downloadMedicalFileBuffer = async (storagePath) => {
@@ -65,18 +75,32 @@ const deleteMedicalFile = async (storagePath) => {
     return;
   }
 
+  await deleteStorageFile({
+    bucketName: MEDICAL_FILES_BUCKET,
+    storagePath,
+  });
+};
+
+const deleteStorageFile = async ({ bucketName, storagePath }) => {
+  if (!storagePath) {
+    return;
+  }
+
   const client = getSupabaseClient();
-  const { error } = await client.storage.from(MEDICAL_FILES_BUCKET).remove([storagePath]);
+  const { error } = await client.storage.from(bucketName).remove([storagePath]);
 
   if (error) {
-    throw createHttpError(500, `Failed to delete medical file: ${error.message}`);
+    throw createHttpError(500, `Failed to delete file from ${bucketName}: ${error.message}`);
   }
 };
 
 module.exports = {
   MEDICAL_FILES_BUCKET,
   deleteMedicalFile,
+  deleteStorageFile,
   downloadMedicalFileBuffer,
-  getMedicalFileUrl,
+  getStorageFileUrl,
+  uploadStorageFile,
   uploadMedicalFile,
+  VOICE_FILES_BUCKET,
 };

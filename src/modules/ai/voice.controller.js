@@ -6,7 +6,6 @@ const voiceChat = async (req, res, next) => {
     const { conversationId, conversation_id } = req.body;
     const data = await service.voiceChat(req.file, {
       conversationId: conversationId || conversation_id,
-      requestOrigin: `${req.protocol}://${req.get('host')}`,
       userId: req.user.id,
     });
 

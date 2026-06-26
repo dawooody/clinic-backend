@@ -2,6 +2,10 @@ const { QueryTypes } = require('sequelize');
 const { v4: uuidv4 } = require('uuid');
 const { sequelize, Conversation } = require('../../models');
 const { conversationHasStoredContext } = require('./memory.repository');
+const {
+  normalizeChatAttachments,
+  normalizeChatMetadata,
+} = require('./chat.persistence.helpers');
 
 const createHttpError = (status, message) => {
   const error = new Error(message);
@@ -201,6 +205,8 @@ const getConversationMessages = async (userId, conversationId) => {
       role,
       message,
       message_type AS "messageType",
+      attachments,
+      metadata,
       created_at AS "createdAt"
     FROM chats
     WHERE conversation_id = :conversationId
@@ -221,6 +227,8 @@ const getConversationMessages = async (userId, conversationId) => {
       messageType: ['user', 'assistant'].includes(message.messageType)
         ? 'chat'
         : message.messageType,
+      attachments: normalizeChatAttachments(message.attachments),
+      metadata: normalizeChatMetadata(message.metadata),
       createdAt: message.createdAt,
     })),
   };

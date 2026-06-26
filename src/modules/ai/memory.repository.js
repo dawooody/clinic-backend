@@ -1,4 +1,8 @@
 const { getSupabaseClient } = require('./supabase.client');
+const {
+  normalizeChatAttachments,
+  normalizeChatMetadata,
+} = require('./chat.persistence.helpers');
 
 const DEFAULT_RECENT_MESSAGE_LIMIT = 6;
 
@@ -29,7 +33,33 @@ const normalizeMessageType = (role, messageType) => {
   return ALLOWED_MESSAGE_TYPES.has(cleanType) ? cleanType : fallbackType;
 };
 
-const storeChatMessage = async (conversationId, role, message, messageType) => {
+const buildChatInsertRow = ({
+  conversationId,
+  role,
+  message,
+  messageType,
+  attachments,
+  metadata,
+}) => {
+  const trimmedMessage = message?.trim();
+
+  return {
+    conversation_id: conversationId,
+    role,
+    message_type: normalizeMessageType(role, messageType),
+    message: trimmedMessage,
+    attachments: normalizeChatAttachments(attachments),
+    metadata: normalizeChatMetadata(metadata),
+  };
+};
+
+const storeChatMessage = async (
+  conversationId,
+  role,
+  message,
+  messageType,
+  options = {},
+) => {
   const trimmedMessage = message?.trim();
 
   if (!conversationId) {
@@ -47,12 +77,14 @@ const storeChatMessage = async (conversationId, role, message, messageType) => {
   const client = getSupabaseClient();
   const { data, error } = await client
     .from('chats')
-    .insert({
-      conversation_id: conversationId,
+    .insert(buildChatInsertRow({
+      conversationId,
       role,
-      message_type: normalizeMessageType(role, messageType),
       message: trimmedMessage,
-    })
+      messageType,
+      attachments: options.attachments,
+      metadata: options.metadata,
+    }))
     .select()
     .single();
 
@@ -69,11 +101,13 @@ const storeChatMessages = async (conversationId, messages = []) => {
   }
 
   const rows = messages
-    .map(({ role, message, message_type, messageType }) => ({
-      conversation_id: conversationId,
+    .map(({ role, message, message_type, messageType, attachments, metadata }) => buildChatInsertRow({
+      conversationId,
       role,
-      message_type: normalizeMessageType(role, message_type || messageType),
-      message: message?.trim(),
+      message,
+      messageType: message_type || messageType,
+      attachments,
+      metadata,
     }))
     .filter(({ role, message }) => ['user', 'assistant'].includes(role) && message);
 
@@ -94,6 +128,61 @@ const storeChatMessages = async (conversationId, messages = []) => {
   return data || [];
 };
 
+const updateChatMessage = async (messageId, updates = {}) => {
+  if (!messageId) {
+    throw createHttpError(400, 'messageId is required.');
+  }
+
+  const client = getSupabaseClient();
+  const patch = {};
+
+  if (updates.message !== undefined) {
+    const trimmedMessage = updates.message?.trim();
+    if (trimmedMessage) {
+      patch.message = trimmedMessage;
+    }
+  }
+
+  if (updates.messageType !== undefined) {
+    patch.message_type = normalizeMessageType(updates.role || 'assistant', updates.messageType);
+  }
+
+  if (updates.attachments !== undefined) {
+    patch.attachments = normalizeChatAttachments(updates.attachments);
+  }
+
+  if (updates.metadata !== undefined) {
+    patch.metadata = normalizeChatMetadata(updates.metadata);
+  }
+
+  if (Object.keys(patch).length === 0) {
+    const { data, error } = await client
+      .from('chats')
+      .select('id,conversation_id,role,message,message_type,attachments,metadata,created_at')
+      .eq('id', messageId)
+      .maybeSingle();
+
+    if (error) {
+      throw createHttpError(500, `Failed to load chat message: ${error.message}`);
+    }
+
+    return data;
+  }
+
+  const { data, error } = await client
+    .from('chats')
+    .update(patch)
+    .eq('id', messageId)
+    .select('id,conversation_id,role,message,message_type,attachments,metadata,created_at')
+    .single();
+
+  if (error) {
+    throw createHttpError(500, `Failed to update chat message: ${error.message}`);
+  }
+
+  return data;
+};
+
 const getRecentMessages = async (conversationId, limit = DEFAULT_RECENT_MESSAGE_LIMIT) => {
   if (!conversationId) {
     return [];
@@ -103,7 +192,7 @@ const getRecentMessages = async (conversationId, limit = DEFAULT_RECENT_MESSAGE_
   const messageLimit = normalizeMessageLimit(limit);
   const { data, error } = await client
     .from('chats')
-    .select('role,message,message_type,created_at')
+    .select('role,message,message_type,attachments,metadata,created_at')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: false })
     .limit(messageLimit);
@@ -112,7 +201,11 @@ const getRecentMessages = async (conversationId, limit = DEFAULT_RECENT_MESSAGE_
     throw createHttpError(500, `Failed to load recent chat messages: ${error.message}`);
   }
 
-  return (data || []).reverse();
+  return (data || []).reverse().map((message) => ({
+    ...message,
+    attachments: normalizeChatAttachments(message.attachments),
+    metadata: normalizeChatMetadata(message.metadata),
+  }));
 };
 
 const getConversationSummary = async (conversationId) => {
@@ -213,5 +306,6 @@ module.exports = {
   getRecentMessages,
   storeChatMessage,
   storeChatMessages,
+  updateChatMessage,
   upsertConversationSummary,
 };
