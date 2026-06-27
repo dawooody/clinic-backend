@@ -1,7 +1,7 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const MEDICAL_FILES_BUCKET = 'Clinic-App';
-const VOICE_FILES_BUCKET = process.env.SUPABASE_VOICE_BUCKET || 'medical-files';
+const VOICE_FILES_BUCKET = process.env.SUPABASE_BUCKET;
 let supabaseClient;
 
 const createHttpError = (status, message) => {
@@ -34,6 +34,7 @@ const getStorageFileUrl = (bucketName, storagePath) => {
 
 const uploadStorageFile = async ({ bucketName, storagePath, buffer, contentType }) => {
   const client = getSupabaseClient();
+  console.log("Bucket:", process.env.SUPABASE_BUCKET);
   const { error } = await client.storage.from(bucketName).upload(storagePath, buffer, {
     contentType,
     upsert: false,
