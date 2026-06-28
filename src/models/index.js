@@ -9,6 +9,7 @@ const Appointment    = require('./Appointment');
 const MedicalRecord  = require('./MedicalRecord');
 const Prescription   = require('./Prescription');
 const SymptomLog     = require('./SymptomLog');
+const SymptomLogMedication = require('./SymptomLogMedication');
 const FamilyLink     = require('./FamilyLink');
 const Notification   = require('./Notification');
 const Conversation   = require('./Conversation');
@@ -61,6 +62,14 @@ MedicalRecord.belongsTo(Patient, { foreignKey: 'patient_id', as: 'patient' });
 Patient.hasMany(SymptomLog, { foreignKey: 'patient_id', as: 'symptomLogs', onDelete: 'CASCADE' });
 SymptomLog.belongsTo(Patient, { foreignKey: 'patient_id', as: 'patient' });
 
+// SymptomLog ↔ SymptomLogMedication  (one-to-many)
+SymptomLog.hasMany(SymptomLogMedication, {
+  foreignKey: 'symptom_log_id',
+  as: 'medications',
+  onDelete: 'CASCADE',
+});
+SymptomLogMedication.belongsTo(SymptomLog, { foreignKey: 'symptom_log_id', as: 'symptomLog' });
+
 // Patient ↔ FamilyLink  (many-to-many via self-join)
 Patient.hasMany(FamilyLink, { foreignKey: 'requester_id', as: 'sentLinks' });
 Patient.hasMany(FamilyLink, { foreignKey: 'receiver_id', as: 'receivedLinks' });
@@ -89,6 +98,7 @@ module.exports = {
   MedicalRecord,
   Prescription,
   SymptomLog,
+  SymptomLogMedication,
   FamilyLink,
   Notification,
   Conversation,

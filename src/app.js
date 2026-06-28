@@ -53,6 +53,7 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/medical-records', recordRoutes);
 app.use('/api/prescriptions', prescriptionRoutes);
 app.use('/api/symptom-tracker', trackerRoutes);
+app.use('/api/symptoms', trackerRoutes);
 app.use('/api/family-links', familyRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/admin',       adminRoutes);

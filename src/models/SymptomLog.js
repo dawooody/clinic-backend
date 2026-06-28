@@ -16,19 +16,35 @@ const SymptomLog = sequelize.define('SymptomLog', {
     type: DataTypes.DATEONLY,
     allowNull: false,
   },
-  // Pain scale 1-5
   pain_level: {
     type: DataTypes.SMALLINT,
-    allowNull: false,
-    validate: { min: 1, max: 5 },
+    allowNull: true,
+    validate: { min: 0, max: 10 },
   },
   symptoms: {
     type: DataTypes.TEXT,
     allowNull: true,
-  },
-  medications_taken: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
+    get() {
+      const value = this.getDataValue('symptoms');
+      if (!value) {
+        return [];
+      }
+
+      return String(value)
+        .split(',')
+        .map((symptom) => symptom.trim())
+        .filter(Boolean);
+    },
+    set(value) {
+      if (Array.isArray(value)) {
+        this.setDataValue(
+          'symptoms',
+          value.map((symptom) => String(symptom).trim()).filter(Boolean).join(', ')
+        );
+      } else {
+        this.setDataValue('symptoms', value);
+      }
+    },
   },
   notes: {
     type: DataTypes.TEXT,
@@ -39,9 +55,14 @@ const SymptomLog = sequelize.define('SymptomLog', {
     allowNull: true,
   },
   mood: {
-    type: DataTypes.ENUM('great', 'good', 'okay', 'bad', 'terrible'),
+    type: DataTypes.STRING,
     allowNull: true,
   },
+  wellness_score: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    validate: { min: 0, max: 100 },
+  }
 }, { tableName: 'symptom_logs' });
 
 module.exports = SymptomLog;
