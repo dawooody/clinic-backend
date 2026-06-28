@@ -92,6 +92,8 @@ const formatRecord = (record, { detailed = false } = {}) => {
     fileUrl: data.file_url,
     recordType: toPublicRecordType(data.record_type),
     recordDate: data.record_date,
+    analysisStatus: data.analysis_status,
+    analyzedAt: data.analyzed_at,
     createdAt: data.created_at,
   };
 
@@ -105,6 +107,10 @@ const formatRecord = (record, { detailed = false } = {}) => {
     fileType: data.file_type,
     fileSize: data.file_size,
     aiSummary: data.ai_summary,
+    aiDetailedAnalysis: data.ai_detailed_analysis,
+    aiAnalysisJson: data.ai_analysis_json,
+    analysisStatus: data.analysis_status,
+    analyzedAt: data.analyzed_at,
     updatedAt: data.updated_at,
   };
 };
@@ -173,7 +179,11 @@ const uploadRecord = async (userId, body, file, options = {}) => {
       file_size: file.size,
       record_type: recordType,
       record_date: recordDate,
-      ai_summary: aiSummary || null,
+      ai_summary: aiSummary ?? null,
+      ai_detailed_analysis: options.aiDetailedAnalysis ?? null,
+      ai_analysis_json: options.aiAnalysisJson ?? null,
+      analysis_status: options.analysisStatus ?? null,
+      analyzed_at: options.analyzedAt ?? null,
     });
 
     return formatRecord(record, { detailed: true });

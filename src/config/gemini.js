@@ -8,6 +8,79 @@ const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 let reportAnalysisModels;
 const REPORT_ANALYSIS_MODEL_NAME = 'gemini-2.5-flash';
 const REPORT_ANALYSIS_MAX_OUTPUT_TOKENS = 1024;
+const REPORT_ANALYSIS_RESPONSE_JSON_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  propertyOrdering: [
+    'reportType',
+    'summary',
+    'detailedAnalysis',
+    'severity',
+    'normalFindings',
+    'abnormalFindings',
+    'recommendations',
+    'followUp',
+    'importantNotes',
+  ],
+  required: [
+    'reportType',
+    'summary',
+    'detailedAnalysis',
+    'severity',
+    'normalFindings',
+    'abnormalFindings',
+    'recommendations',
+    'followUp',
+    'importantNotes',
+  ],
+  properties: {
+    reportType: { type: 'string' },
+    summary: { type: 'string' },
+    detailedAnalysis: { type: 'string' },
+    severity: { type: 'string' },
+    normalFindings: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+    abnormalFindings: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        propertyOrdering: [
+          'parameter',
+          'value',
+          'normalRange',
+          'status',
+          'explanation',
+        ],
+        required: [
+          'parameter',
+          'value',
+          'normalRange',
+          'status',
+          'explanation',
+        ],
+        properties: {
+          parameter: { type: 'string' },
+          value: { type: 'string' },
+          normalRange: { type: 'string' },
+          status: { type: 'string' },
+          explanation: { type: 'string' },
+        },
+      },
+    },
+    recommendations: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+    followUp: { type: 'string' },
+    importantNotes: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+  },
+};
 const reportAnalysisModel = {
   generateContent: (...args) => getReportAnalysisModel().generateContent(...args),
 };
@@ -47,16 +120,24 @@ const getReportAnalysisModel = () => {
 
 const buildReportAnalysisPrompt = () => [
   'Analyze this medical report carefully.',
-  'Return plain text only. Do not use markdown, bullets, or JSON.',
-  'Use exactly these section labels, in this order, each on its own line:',
-  'Overall summary:',
-  'Abnormal findings:',
-  'Normal findings:',
-  'Recommendations:',
-  'Write concise complete sentences under each heading.',
-  'If a section has no findings, write "None reported."',
-  'Do not include any other headings.',
-  'Do not provide a diagnosis.',
+  'Return only one valid JSON object.',
+  'Do not return markdown, code fences, comments, labels, bullets, or any extra text before or after the JSON object.',
+  'The response must be directly parsable with JSON.parse().',
+  'Use this exact schema and key order:',
+  '{"reportType":"","summary":"","detailedAnalysis":"","severity":"","normalFindings":[],"abnormalFindings":[{"parameter":"","value":"","normalRange":"","status":"","explanation":""}],"recommendations":[],"followUp":"","importantNotes":[]}',
+  'Field requirements:',
+  'reportType: identify the report or study type such as CBC, X-ray, MRI, CT, pathology, or ultrasound.',
+  'summary: a short clinician-friendly overview.',
+  'detailedAnalysis: a concise but more complete interpretation of the report content.',
+  'severity: use exactly one of these values: normal, mild, moderate, severe, critical, unknown.',
+  'normalFindings: array of strings listing findings that are explicitly normal. Use [] when none are stated.',
+  'abnormalFindings: array of objects, one per abnormal or notable parameter. Use [] when none are stated.',
+  'recommendations: array of practical next-step suggestions grounded in the report content. Use [] when none are appropriate.',
+  'followUp: short text describing suggested follow-up timing or action, or an empty string if not available.',
+  'importantNotes: array of strings for urgent cautions, limitations, or clinically important context. Use [] when none are stated.',
+  'Use empty strings for unknown string values.',
+  'Base the response only on the uploaded PDF or medical image.',
+  'Do not provide a diagnosis beyond what is explicitly supported by the report.',
 ].join('\n');
 
 const logReportAnalysisUsage = (response) => {
@@ -123,13 +204,14 @@ const analyzeMedicalReport = async (file) => {
         ],
       }],
       config: {
-        temperature: 0.2,
+        temperature: 0,
         maxOutputTokens: REPORT_ANALYSIS_MAX_OUTPUT_TOKENS,
         thinkingConfig: {
           thinkingBudget: 0,
           includeThoughts: false,
         },
-        responseMimeType: 'text/plain',
+        responseMimeType: 'application/json',
+        responseJsonSchema: REPORT_ANALYSIS_RESPONSE_JSON_SCHEMA,
       },
     });
 

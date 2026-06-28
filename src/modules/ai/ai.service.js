@@ -23,6 +23,9 @@ const {
   SUMMARY_UPDATE_INTERVAL,
   updateConversationSummary,
 } = require('./summary.helpers');
+const {
+  parseAndValidateGeminiReportAnalysis,
+} = require('./report-analysis.helpers');
 const { translateToEnglish } = require('./translation.helpers');
 const { detectLanguage } = require('./language.helpers');
 const { generateEmbedding } = require('./embedding.helpers');
@@ -39,6 +42,7 @@ const {
 } = require('../../models');
 const { Op } = require('sequelize');
 const {
+  formatRecord,
   getRecordBuffer,
   uploadRecord: storeMedicalRecord,
 } = require('../medical-records/records.supabase.service');
@@ -51,6 +55,44 @@ const createHttpError = (status, message) => {
   const error = new Error(message);
   error.status = status;
   return error;
+};
+
+const markRecordAnalysisFailed = async (recordId, message) => {
+  if (!recordId) {
+    return;
+  }
+
+  try {
+    await MedicalRecord.update(
+      {
+        ai_summary: null,
+        analysis_status: 'failed',
+        ai_detailed_analysis: null,
+        ai_analysis_json: null,
+        analyzed_at: null,
+      },
+      { where: { id: recordId } },
+    );
+  } catch (updateError) {
+    console.error('Failed to mark medical record analysis as failed:', updateError.message);
+  }
+
+  if (message) {
+    console.error('Medical record analysis failed:', message);
+  }
+};
+
+const completeRecordAnalysis = async (recordId, analysis) => {
+  await MedicalRecord.update(
+    {
+      ai_summary: analysis.summary,
+      ai_detailed_analysis: analysis.detailedAnalysis,
+      ai_analysis_json: analysis,
+      analysis_status: 'completed',
+      analyzed_at: new Date(),
+    },
+    { where: { id: recordId } },
+  );
 };
 
 const prepareChatContext = async (message, options = {}) => {
@@ -139,13 +181,40 @@ const analyzeMedicalReport = async (file, options = {}) => {
     title: options.title,
   });
   const conversationId = conversation.id;
-  const summary = await analyzeMedicalReportWithGemini(file);
   const record = await storeMedicalRecord(
     options.userId,
     options.metadata || {},
     file,
-    { aiSummary: summary },
+    {
+      aiSummary: null,
+      aiDetailedAnalysis: null,
+      aiAnalysisJson: null,
+      analysisStatus: 'processing',
+      analyzedAt: null,
+    },
   );
+  let analysis;
+
+  try {
+    const rawAnalysis = await analyzeMedicalReportWithGemini(file);
+    analysis = parseAndValidateGeminiReportAnalysis(rawAnalysis);
+    await completeRecordAnalysis(record.id, analysis);
+  } catch (error) {
+    await markRecordAnalysisFailed(record.id, error.message);
+
+    if (error.code === 'INVALID_REPORT_ANALYSIS') {
+      throw createHttpError(502, error.message);
+    }
+
+    if (error.status) {
+      throw error;
+    }
+
+    throw createHttpError(502, `Gemini report analysis failed: ${error.message}`);
+  }
+
+  const updatedRecord = await MedicalRecord.findByPk(record.id);
+  const summary = analysis.summary;
   const messageType = file.mimetype?.startsWith('image/')
     ? 'image_analysis'
     : 'report_summary';
@@ -198,7 +267,8 @@ const analyzeMedicalReport = async (file, options = {}) => {
     conversationId,
     message_type: messageType,
     summary,
-    record,
+    analysis,
+    record: updatedRecord ? formatRecord(updatedRecord, { detailed: true }) : record,
     summaryUpdated,
     summaryUpdateError,
   };

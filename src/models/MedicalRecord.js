@@ -37,6 +37,22 @@ const MedicalRecord = sequelize.define('MedicalRecord', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  ai_detailed_analysis: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  ai_analysis_json: {
+    type: DataTypes.JSON,
+    allowNull: true,
+  },
+  analysis_status: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+  },
+  analyzed_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
   record_type: {
     type: DataTypes.ENUM('lab_result', 'radiology', 'prescription', 'other'),
     defaultValue: 'other',
